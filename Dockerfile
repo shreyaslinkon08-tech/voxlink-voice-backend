@@ -15,6 +15,8 @@ COPY services/telephony/package.json services/telephony/package.json
 COPY services/rag/package.json services/rag/package.json
 
 RUN NODE_ENV=development npm ci --include=dev
+# The lockfile is generated on Windows, so install Alpine native CSS build packages explicitly.
+RUN NODE_ENV=development npm install --no-save --no-package-lock @tailwindcss/oxide-linux-x64-musl@4.3.0 lightningcss-linux-x64-musl@1.32.0
 
 COPY apps/api apps/api
 COPY apps/web apps/web

@@ -9,6 +9,8 @@ COPY apps/web/package.json apps/web/package.json
 COPY packages/shared/package.json packages/shared/package.json
 
 RUN NODE_ENV=development npm ci --include=dev
+# The lockfile is generated on Windows, so install Alpine native CSS build packages explicitly.
+RUN NODE_ENV=development npm install --no-save --no-package-lock @tailwindcss/oxide-linux-x64-musl@4.3.0 lightningcss-linux-x64-musl@1.32.0
 
 COPY apps/web apps/web
 COPY packages packages
