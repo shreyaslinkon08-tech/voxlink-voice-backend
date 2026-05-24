@@ -1,0 +1,46 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "voxlink-ai",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-05-24",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "vars": {
+    "NEXT_PUBLIC_API_URL": "https://voxlinkapi-production.up.railway.app",
+    "INTERNAL_API_URL": "https://voxlinkapi-production.up.railway.app"
+  },
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "NEXT_CACHE_DO_QUEUE",
+        "class_name": "DOQueueHandler"
+      },
+      {
+        "name": "NEXT_TAG_CACHE_DO_SHARDED",
+        "class_name": "DOShardedTagCache"
+      },
+      {
+        "name": "NEXT_CACHE_DO_PURGE",
+        "class_name": "BucketCachePurge"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": ["DOQueueHandler", "DOShardedTagCache", "BucketCachePurge"]
+    }
+  ],
+  "services": [
+    {
+      "binding": "WORKER_SELF_REFERENCE",
+      "service": "voxlink-ai"
+    }
+  ],
+  "observability": {
+    "enabled": true
+  }
+}

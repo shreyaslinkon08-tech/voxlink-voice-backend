@@ -6,6 +6,8 @@ export default [
     ignores: [
       "**/dist/**",
       "**/.next/**",
+      "**/.open-next/**",
+      "**/.wrangler/**",
       "**/coverage/**",
       "**/node_modules/**",
       "**/*.config.mjs",

@@ -26,6 +26,7 @@
   "include": [
     "next-env.d.ts",
     "next.config.ts",
+    "open-next.config.ts",
     "src/**/*.ts",
     "src/**/*.tsx",
     ".next/types/**/*.ts"
