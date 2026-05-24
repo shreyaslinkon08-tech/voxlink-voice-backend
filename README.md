@@ -86,8 +86,9 @@ npm.cmd run docker:up
 
 - Production API config now fails fast when placeholder secrets, shared JWT/cookie
   secrets, missing provider keys, or non-HTTPS public/provider URLs are detected.
-- The root `Dockerfile` and `railway.json` are configured for an API-only Railway
-  deployment. Railway's `PORT` variable is mapped to `API_PORT` automatically.
+- The root `Dockerfile` and `railway.json` are configured for Railway and can start
+  either the API or Web app based on `VOXLINK_DEPLOY_TARGET` or Railway's service
+  name. Railway's `PORT` variable is mapped to the active HTTP server.
 - Fastify request logging redacts authorization, cookie, Twilio signature,
   idempotency, password, and token fields.
 - `/ready` checks Postgres, Redis, and required provider registration. In
@@ -131,26 +132,52 @@ credentials, configure Twilio phone-number webhooks to the HTTPS API domain, cre
 Stripe products/prices and webhook endpoint secrets, and point production DNS at the
 deployed web/API runtimes.
 
-## Railway Backend Deploy
+## Railway Deploy
 
-Create one Railway service from this GitHub repository and use the repository root
-with the root `Dockerfile`. Do not deploy `@voxlink/stt`, `@voxlink/tts`,
-`@voxlink/llm`, `@voxlink/rag`, or `@voxlink/telephony` as separate Railway services;
-they are internal npm packages used by the API runtime.
+Create two Railway HTTP services from this GitHub repository:
+
+1. API service
+2. Web service
+
+Do not deploy `@voxlink/stt`, `@voxlink/tts`, `@voxlink/llm`, `@voxlink/rag`,
+`@voxlink/telephony`, or `@voxlink/shared` as separate Railway services. They are
+internal npm packages used by the API and Web runtimes.
 
 If Railway auto-stages one service per npm workspace during import, remove the
-internal package services and keep a single API service configured with:
+internal package services and keep only API and Web.
+
+Recommended API service configuration:
 
 - Root Directory: empty / repository root
 - Builder: Dockerfile
-- Dockerfile path: `Dockerfile`
+- Dockerfile path: `Dockerfile.api`
+- Config file path: `/railway.api.json`
 - Healthcheck path: `/ready`
+- Variable: `VOXLINK_DEPLOY_TARGET=api`
+
+Recommended Web service configuration:
+
+- Root Directory: empty / repository root
+- Builder: Dockerfile
+- Dockerfile path: `Dockerfile.web`
+- Config file path: `/railway.web.json`
+- Healthcheck path: `/ready`
+- Variable: `VOXLINK_DEPLOY_TARGET=web`
+
+The root `Dockerfile` also supports both real services if Railway is already pointed
+at `/railway.json`. It uses `RAILWAY_SERVICE_NAME` to start Web for a service whose
+name contains `web`, otherwise API. Set `VOXLINK_DEPLOY_TARGET` explicitly if the
+service names are custom.
 
 Add Railway Postgres and Redis plugins, then set these API variables in Railway:
 `NODE_ENV=production`, `DATABASE_URL`, `REDIS_URL`, `JWT_ACCESS_SECRET`,
 `JWT_REFRESH_SECRET`, `COOKIE_SECRET`, `API_PUBLIC_URL`, `WEB_PUBLIC_URL`,
 `WEB_ORIGIN`, `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_WEBHOOK_BASE_URL`,
 `GROQ_API_KEYS`, and Stripe/Google variables if those features are enabled.
+
+Set these Web variables in the Web service:
+`NEXT_PUBLIC_API_URL=https://your-api-domain` and
+`INTERNAL_API_URL=https://your-api-domain`.
 
 The container runs `prisma migrate deploy` before starting the Fastify API. After the
 first successful deploy, run `npm.cmd run smoke:api -- https://your-railway-domain`
