@@ -31,7 +31,16 @@ export const healthRoutes: FastifyPluginCallback = (app, _options, done) => {
 
     if (!ready) {
       reply.status(503);
-}
+    }
+
+    return {
+      status: ready ? "ready" : "not_ready",
+      checks
+    };
+  });
+
+  done();
+};
 
 function providerReadiness(app: Parameters<FastifyPluginCallback>[0]): {
   readonly ready: boolean;
@@ -53,12 +62,3 @@ function providerReadiness(app: Parameters<FastifyPluginCallback>[0]): {
     configured
   };
 }
-
-    return {
-      status: ready ? "ready" : "not_ready",
-      checks
-    };
-  });
-
-  done();
-};
