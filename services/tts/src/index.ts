@@ -1,4 +1,4 @@
-export type { TtsModelId, TtsProviderPort, TtsSynthesisRequest } from "@altrion/shared";
+export type { TtsModelId, TtsProviderPort, TtsSynthesisRequest } from "@voxlink/shared";
 
 export { GroqTtsProvider, type GroqTtsProviderConfig } from "./groq-tts-provider.js";
 

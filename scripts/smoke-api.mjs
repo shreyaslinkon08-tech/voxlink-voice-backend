@@ -10,7 +10,7 @@ for (const check of checks) {
   const startedAt = Date.now();
   const response = await fetch(url, {
     headers: {
-      "user-agent": "altrion-smoke-check/1.0"
+      "user-agent": "voxlink-smoke-check/1.0"
     }
   });
   const elapsedMs = Date.now() - startedAt;

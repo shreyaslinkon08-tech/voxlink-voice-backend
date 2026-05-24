@@ -1,6 +1,6 @@
 import { CallStatus, type PrismaClient } from "@prisma/client";
 import type { FastifyBaseLogger } from "fastify";
-import { assertValidCallTransition } from "@altrion/shared";
+import { assertValidCallTransition } from "@voxlink/shared";
 import { AppError } from "../../errors/app-error.js";
 import type {
   TwilioMediaStreamEvent,

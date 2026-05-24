@@ -32,7 +32,7 @@ export class InlineEmailJobPort implements EmailJobPort {
   async enqueueVerificationEmail(job: VerificationEmailJob): Promise<void> {
     await this.sender.send({
       to: job.email,
-      subject: "Verify your Altrion Voice account",
+      subject: "Verify your VoxLink Voice account",
       text: `Hi ${job.name},\n\nVerify your account:\n${job.verificationUrl}\n\nIf you did not request this, you can ignore this email.`
     });
   }
@@ -40,7 +40,7 @@ export class InlineEmailJobPort implements EmailJobPort {
   async enqueuePasswordResetEmail(job: PasswordResetEmailJob): Promise<void> {
     await this.sender.send({
       to: job.email,
-      subject: "Reset your Altrion Voice password",
+      subject: "Reset your VoxLink Voice password",
       text: `Hi ${job.name},\n\nReset your password:\n${job.resetUrl}\n\nIf you did not request this, you can ignore this email.`
     });
   }
@@ -48,7 +48,7 @@ export class InlineEmailJobPort implements EmailJobPort {
   async enqueueTeamInvitationEmail(job: TeamInvitationEmailJob): Promise<void> {
     await this.sender.send({
       to: job.email,
-      subject: `${job.invitedByName} invited you to ${job.companyName} on Altrion Voice`,
+      subject: `${job.invitedByName} invited you to ${job.companyName} on VoxLink Voice`,
       text: `You have been invited to join ${job.companyName} as ${job.role.replaceAll("_", " ")}.\n\nAccept the invitation:\n${job.invitationUrl}\n\nIf you were not expecting this invitation, you can ignore this email.`
     });
   }

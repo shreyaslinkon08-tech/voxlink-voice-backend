@@ -1,11 +1,11 @@
 services:
   postgres:
     image: pgvector/pgvector:pg16
-    container_name: altrion-postgres
+    container_name: voxlink-postgres
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-altrion_voice}
-      POSTGRES_USER: ${POSTGRES_USER:-altrion}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-altrion_dev_password}
+      POSTGRES_DB: ${POSTGRES_DB:-voxlink_voice}
+      POSTGRES_USER: ${POSTGRES_USER:-voxlink}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-voxlink_dev_password}
     ports:
       - "5432:5432"
     volumes:
@@ -18,7 +18,7 @@ services:
 
   redis:
     image: redis:7-alpine
-    container_name: altrion-redis
+    container_name: voxlink-redis
     ports:
       - "6379:6379"
     command: ["redis-server", "--appendonly", "yes"]
@@ -32,7 +32,7 @@ services:
 
   mailpit:
     image: axllent/mailpit:v1.21
-    container_name: altrion-mailpit
+    container_name: voxlink-mailpit
     ports:
       - "1025:1025"
       - "8025:8025"
@@ -41,8 +41,8 @@ services:
     build:
       context: ../..
       dockerfile: infrastructure/docker/api.Dockerfile
-    container_name: altrion-api
-    command: npm run dev -w @altrion/api
+    container_name: voxlink-api
+    command: npm run dev -w @voxlink/api
     environment:
       NODE_ENV: development
       API_HOST: 0.0.0.0
@@ -50,11 +50,11 @@ services:
       API_PUBLIC_URL: http://localhost:4000
       WEB_PUBLIC_URL: http://localhost:3000
       WEB_ORIGIN: http://localhost:3000
-      DATABASE_URL: postgresql://altrion:altrion_dev_password@postgres:5432/altrion_voice?schema=public
+      DATABASE_URL: postgresql://voxlink:voxlink_dev_password@postgres:5432/voxlink_voice?schema=public
       REDIS_URL: redis://redis:6379
       MAIL_HOST: mailpit
       MAIL_PORT: 1025
-      MAIL_FROM: "Altrion Voice <no-reply@altrion.local>"
+      MAIL_FROM: "VoxLink Voice <no-reply@voxlink.local>"
       JWT_ACCESS_SECRET: replace-with-at-least-32-random-characters
       JWT_REFRESH_SECRET: replace-with-another-32-random-characters
       COOKIE_SECRET: replace-with-cookie-secret-at-least-32-chars
@@ -112,8 +112,8 @@ services:
     build:
       context: ../..
       dockerfile: infrastructure/docker/web.Dockerfile
-    container_name: altrion-web
-    command: npm run dev -w @altrion/web
+    container_name: voxlink-web
+    command: npm run dev -w @voxlink/web
     environment:
       NEXT_PUBLIC_API_URL: http://localhost:4000
       INTERNAL_API_URL: http://api:4000

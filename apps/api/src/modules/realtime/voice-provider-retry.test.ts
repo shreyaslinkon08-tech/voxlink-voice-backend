@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ProviderRequestError } from "@altrion/shared";
+import { ProviderRequestError } from "@voxlink/shared";
 import { shouldRetryProviderError, withVoiceProviderRetries } from "./voice-provider-retry.js";
 
 describe("voice provider retry policy", () => {

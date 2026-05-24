@@ -19,17 +19,17 @@ COPY apps/api apps/api
 COPY packages packages
 COPY services services
 
-RUN npm run db:generate -w @altrion/api
-RUN npm run build -w @altrion/shared
-RUN npm run build -w @altrion/stt
-RUN npm run build -w @altrion/tts
-RUN npm run build -w @altrion/llm
-RUN npm run build -w @altrion/telephony
-RUN npm run build -w @altrion/rag
-RUN npm run build -w @altrion/api
+RUN npm run db:generate -w @voxlink/api
+RUN npm run build -w @voxlink/shared
+RUN npm run build -w @voxlink/stt
+RUN npm run build -w @voxlink/tts
+RUN npm run build -w @voxlink/llm
+RUN npm run build -w @voxlink/telephony
+RUN npm run build -w @voxlink/rag
+RUN npm run build -w @voxlink/api
 
 EXPOSE 4000
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 CMD node -e "fetch('http://127.0.0.1:' + (process.env.API_PORT || process.env.PORT || '4000') + '/ready').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
 
-CMD ["sh", "-c", "npm run db:deploy -w @altrion/api && npm run start -w @altrion/api"]
+CMD ["sh", "-c", "npm run db:deploy -w @voxlink/api && npm run start -w @voxlink/api"]

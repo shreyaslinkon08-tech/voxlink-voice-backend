@@ -13,7 +13,7 @@ import {
   type SttProviderPort,
   type SttTranscriptionChunk,
   type SttTranscriptionRequest
-} from "@altrion/shared";
+} from "@voxlink/shared";
 import { prepareAudioFile } from "./audio-file.js";
 
 type FetchLike = (input: string | URL, init?: RequestInit) => Promise<Response>;
@@ -109,7 +109,7 @@ export class GroqSttProvider implements SttProviderPort {
         headers: {
           authorization: `Bearer ${this.keyRing.next()}`,
           "x-request-id": context.requestId,
-          ...(context.companyId ? { "x-altrion-company-id": context.companyId } : {})
+          ...(context.companyId ? { "x-voxlink-company-id": context.companyId } : {})
         },
         body: formData,
         signal: abortController.signal

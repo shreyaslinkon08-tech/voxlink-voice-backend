@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { planCodeValues } from "@altrion/shared";
+import { planCodeValues } from "@voxlink/shared";
 
 export const updateSubscriptionPlanSchema = z.object({
   planCode: z.enum(planCodeValues)

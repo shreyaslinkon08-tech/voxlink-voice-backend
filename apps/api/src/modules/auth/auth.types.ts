@@ -1,4 +1,4 @@
-import type { UserRole } from "@altrion/shared";
+import type { UserRole } from "@voxlink/shared";
 
 export interface AccessTokenPayload {
   readonly sub: string;

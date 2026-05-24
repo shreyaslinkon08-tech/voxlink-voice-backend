@@ -16,7 +16,7 @@ import {
   type TelephonyProvisionNumberRequest,
   type TelephonyProvisionNumberResponse,
   type TelephonyProviderPort
-} from "@altrion/shared";
+} from "@voxlink/shared";
 
 type FetchLike = (input: string | URL, init?: RequestInit) => Promise<Response>;
 
@@ -279,8 +279,8 @@ export class TwilioTelephonyProvider implements TelephonyProviderPort {
         headers: {
           authorization: this.authorizationHeader(),
           "content-type": "application/x-www-form-urlencoded",
-          "x-altrion-request-id": context.requestId,
-          ...(context.companyId ? { "x-altrion-company-id": context.companyId } : {}),
+          "x-voxlink-request-id": context.requestId,
+          ...(context.companyId ? { "x-voxlink-company-id": context.companyId } : {}),
           ...init.headers
         },
         signal: abortController.signal

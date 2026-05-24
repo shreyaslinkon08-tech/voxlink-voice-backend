@@ -1,4 +1,4 @@
-export type { TelephonyInboundCall, TelephonyProviderPort } from "@altrion/shared";
+export type { TelephonyInboundCall, TelephonyProviderPort } from "@voxlink/shared";
 
 export {
   TwilioTelephonyProvider,

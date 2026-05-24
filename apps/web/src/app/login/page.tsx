@@ -16,7 +16,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
     <AuthShell
       title="Sign in"
       subtitle="Access your company voice assistant console."
-      footerText="New to Altrion?"
+      footerText="New to VoxLink?"
       footerHref="/signup"
       footerLabel="Create an account"
     >

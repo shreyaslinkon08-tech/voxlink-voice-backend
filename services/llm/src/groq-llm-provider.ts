@@ -14,7 +14,7 @@ import {
   type LlmProviderPort,
   type ProviderExecutionContext,
   type ProviderHealthSnapshot
-} from "@altrion/shared";
+} from "@voxlink/shared";
 
 type FetchLike = (input: string | URL, init?: RequestInit) => Promise<Response>;
 
@@ -94,7 +94,7 @@ export class GroqLlmProvider implements LlmProviderPort {
           authorization: `Bearer ${this.keyRing.next()}`,
           "content-type": "application/json",
           "x-request-id": context.requestId,
-          ...(context.companyId ? { "x-altrion-company-id": context.companyId } : {})
+          ...(context.companyId ? { "x-voxlink-company-id": context.companyId } : {})
         },
         body: JSON.stringify(this.toGroqPayload(request)),
         signal: abortController.signal

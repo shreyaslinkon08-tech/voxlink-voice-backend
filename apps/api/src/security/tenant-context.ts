@@ -1,5 +1,5 @@
 import type { FastifyRequest } from "fastify";
-import type { TenantContext } from "@altrion/shared";
+import type { TenantContext } from "@voxlink/shared";
 import { AppError } from "../errors/app-error.js";
 
 export function getTenantContext(request: FastifyRequest): TenantContext | null {

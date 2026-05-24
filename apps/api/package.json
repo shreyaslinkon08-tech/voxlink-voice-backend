@@ -1,5 +1,5 @@
 {
-  "name": "@altrion/api",
+  "name": "@voxlink/api",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -19,11 +19,11 @@
     "db:seed": "tsx src/scripts/seed.ts"
   },
   "dependencies": {
-    "@altrion/llm": "0.1.0",
-    "@altrion/shared": "0.1.0",
-    "@altrion/stt": "0.1.0",
-    "@altrion/telephony": "0.1.0",
-    "@altrion/tts": "0.1.0",
+    "@voxlink/llm": "0.1.0",
+    "@voxlink/shared": "0.1.0",
+    "@voxlink/stt": "0.1.0",
+    "@voxlink/telephony": "0.1.0",
+    "@voxlink/tts": "0.1.0",
     "@fastify/cookie": "^11.0.2",
     "@fastify/cors": "^11.1.0",
     "@fastify/helmet": "^13.0.2",

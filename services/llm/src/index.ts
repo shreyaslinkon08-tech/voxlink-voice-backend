@@ -4,7 +4,7 @@ export type {
   LlmCompletionResponse,
   LlmModelProfile,
   LlmProviderPort
-} from "@altrion/shared";
+} from "@voxlink/shared";
 
 export { GroqLlmProvider, type GroqLlmProviderConfig } from "./groq-llm-provider.js";
 

@@ -1,5 +1,5 @@
 import type { FastifyBaseLogger } from "fastify";
-import { ProviderRequestError } from "@altrion/shared";
+import { ProviderRequestError } from "@voxlink/shared";
 
 export interface VoiceProviderRetryOptions {
   readonly operationName: string;

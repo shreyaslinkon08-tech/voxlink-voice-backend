@@ -1,5 +1,5 @@
 {
-  "name": "@altrion/stt",
+  "name": "@voxlink/stt",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -12,7 +12,7 @@
     "test": "vitest run src --passWithNoTests"
   },
   "dependencies": {
-    "@altrion/shared": "0.1.0"
+    "@voxlink/shared": "0.1.0"
   },
   "devDependencies": {
     "vitest": "^4.0.8"

@@ -24,12 +24,12 @@
     "strict": true,
     "baseUrl": ".",
     "paths": {
-      "@altrion/shared": ["packages/shared/src/index.ts"],
-      "@altrion/stt": ["services/stt/src/index.ts"],
-      "@altrion/tts": ["services/tts/src/index.ts"],
-      "@altrion/llm": ["services/llm/src/index.ts"],
-      "@altrion/telephony": ["services/telephony/src/index.ts"],
-      "@altrion/rag": ["services/rag/src/index.ts"]
+      "@voxlink/shared": ["packages/shared/src/index.ts"],
+      "@voxlink/stt": ["services/stt/src/index.ts"],
+      "@voxlink/tts": ["services/tts/src/index.ts"],
+      "@voxlink/llm": ["services/llm/src/index.ts"],
+      "@voxlink/telephony": ["services/telephony/src/index.ts"],
+      "@voxlink/rag": ["services/rag/src/index.ts"]
     },
     "verbatimModuleSyntax": true
   }

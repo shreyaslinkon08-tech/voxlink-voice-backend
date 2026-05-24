@@ -1,9 +1,9 @@
 import { createHash } from "node:crypto";
 import { Prisma, SubscriptionStatus, WebhookProcessingStatus } from "@prisma/client";
 import type { FastifyInstance, FastifyRequest } from "fastify";
-import { isPlanCode, resolveSubscriptionPlan, type PlanCode } from "@altrion/shared";
+import { isPlanCode, resolveSubscriptionPlan, type PlanCode } from "@voxlink/shared";
 import { AppError } from "../../errors/app-error.js";
-import type { TenantContext } from "@altrion/shared";
+import type { TenantContext } from "@voxlink/shared";
 import { createStripeCheckoutSession, createStripePortalSession } from "./stripe-client.js";
 
 interface StripeEvent {

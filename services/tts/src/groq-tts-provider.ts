@@ -12,7 +12,7 @@ import {
   type TtsModelId,
   type TtsProviderPort,
   type TtsSynthesisRequest
-} from "@altrion/shared";
+} from "@voxlink/shared";
 
 type FetchLike = (input: string | URL, init?: RequestInit) => Promise<Response>;
 
@@ -98,7 +98,7 @@ export class GroqTtsProvider implements TtsProviderPort {
           authorization: `Bearer ${this.keyRing.next()}`,
           "content-type": "application/json",
           "x-request-id": context.requestId,
-          ...(context.companyId ? { "x-altrion-company-id": context.companyId } : {})
+          ...(context.companyId ? { "x-voxlink-company-id": context.companyId } : {})
         },
         body: JSON.stringify({
           model: request.model ?? this.defaultModel,

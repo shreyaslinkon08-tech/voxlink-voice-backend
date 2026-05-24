@@ -1,6 +1,6 @@
 import type { PrismaClient } from "@prisma/client";
 import type { Redis } from "ioredis";
-import type { TenantContext } from "@altrion/shared";
+import type { TenantContext } from "@voxlink/shared";
 import type { AppConfig } from "../config/env.js";
 import type { EmailJobPort } from "../jobs/email-job-port.js";
 import type { AccessTokenPayload } from "../modules/auth/auth.types.js";

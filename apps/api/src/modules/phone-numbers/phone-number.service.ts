@@ -4,7 +4,7 @@ import type {
   TelephonyAvailablePhoneNumber,
   TelephonyProviderPort,
   TelephonyProvisionNumberResponse
-} from "@altrion/shared";
+} from "@voxlink/shared";
 import { AppError } from "../../errors/app-error.js";
 import { assertResourceWithinLimit } from "../billing/usage-limits.js";
 
@@ -304,6 +304,6 @@ async function assertPhoneNumberIsNotMapped(app: FastifyInstance, e164: string):
   });
 
   if (existing) {
-    throw AppError.conflict("Phone number is already mapped in Altrion");
+    throw AppError.conflict("Phone number is already mapped in VoxLink");
   }
 }

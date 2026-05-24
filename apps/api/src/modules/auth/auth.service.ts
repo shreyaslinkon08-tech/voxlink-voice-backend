@@ -381,7 +381,7 @@ export async function completeGoogleOAuthSignIn(
       };
     }
 
-    throw AppError.badRequest("No Altrion account exists for this Google account");
+    throw AppError.badRequest("No VoxLink account exists for this Google account");
   });
 
   const selectedMembership = selectActiveMembership(result.user, result.preferredCompanyId);

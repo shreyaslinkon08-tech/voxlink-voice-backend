@@ -14,7 +14,7 @@ import {
   type SttProviderPort,
   type SttTranscriptionChunk,
   type TtsProviderPort
-} from "@altrion/shared";
+} from "@voxlink/shared";
 import { AppError } from "../../errors/app-error.js";
 import type { ProviderRegistry } from "../../providers/provider-registry.js";
 import {

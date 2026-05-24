@@ -1,9 +1,9 @@
 import type { FastifyReply } from "fastify";
 import type { AppConfig } from "../../config/env.js";
 
-export const accessCookieName = "altrion_access";
-export const refreshCookieName = "altrion_refresh";
-export const googleOAuthStateCookieName = "altrion_google_oauth_state";
+export const accessCookieName = "voxlink_access";
+export const refreshCookieName = "voxlink_refresh";
+export const googleOAuthStateCookieName = "voxlink_google_oauth_state";
 
 export const accessTokenTtlSeconds = 15 * 60;
 export const refreshTokenTtlSeconds = 30 * 24 * 60 * 60;

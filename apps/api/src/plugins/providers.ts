@@ -1,9 +1,9 @@
 import fp from "fastify-plugin";
-import { GroqLlmProvider } from "@altrion/llm";
-import { GroqSttProvider } from "@altrion/stt";
-import { TwilioTelephonyProvider } from "@altrion/telephony";
-import { GroqTtsProvider } from "@altrion/tts";
-import type { LlmModelProfile } from "@altrion/shared";
+import { GroqLlmProvider } from "@voxlink/llm";
+import { GroqSttProvider } from "@voxlink/stt";
+import { TwilioTelephonyProvider } from "@voxlink/telephony";
+import { GroqTtsProvider } from "@voxlink/tts";
+import type { LlmModelProfile } from "@voxlink/shared";
 import { ProviderRegistry } from "../providers/provider-registry.js";
 
 export const providersPlugin = fp((app, _options, done) => {

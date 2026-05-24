@@ -1,4 +1,4 @@
-# Altrion Voice Platform
+# VoxLink Voice Platform
 
 Production-style, lean Phase 1 foundation for a multi-tenant AI voice assistant SaaS.
 

@@ -35,7 +35,7 @@ const envSchema = z.object({
   REDIS_URL: z.string().min(1).default("redis://localhost:6379"),
   MAIL_HOST: z.string().min(1).default("localhost"),
   MAIL_PORT: z.coerce.number().int().positive().default(1025),
-  MAIL_FROM: z.string().min(1).default("Altrion Voice <no-reply@altrion.local>"),
+  MAIL_FROM: z.string().min(1).default("VoxLink Voice <no-reply@voxlink.local>"),
   JWT_ACCESS_SECRET: z.string().min(32),
   JWT_REFRESH_SECRET: z.string().min(32),
   COOKIE_SECRET: z.string().min(32),

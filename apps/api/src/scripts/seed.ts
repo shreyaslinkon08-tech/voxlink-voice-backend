@@ -18,8 +18,8 @@ async function main(): Promise<void> {
   const email = requireEnv("BOOTSTRAP_SUPER_ADMIN_EMAIL").toLowerCase();
   const password = requireEnv("BOOTSTRAP_SUPER_ADMIN_PASSWORD");
   const name = process.env.BOOTSTRAP_SUPER_ADMIN_NAME?.trim() || "Platform Admin";
-  const companyName = process.env.BOOTSTRAP_COMPANY_NAME?.trim() || "Altrion Platform";
-  const companySlug = process.env.BOOTSTRAP_COMPANY_SLUG?.trim() || "altrion-platform";
+  const companyName = process.env.BOOTSTRAP_COMPANY_NAME?.trim() || "VoxLink Platform";
+  const companySlug = process.env.BOOTSTRAP_COMPANY_SLUG?.trim() || "voxlink-platform";
   const resetExistingPassword = process.env.BOOTSTRAP_SUPER_ADMIN_RESET_PASSWORD === "true";
 
   if (password.length < 12) {

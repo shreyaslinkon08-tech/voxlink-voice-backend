@@ -51,7 +51,7 @@ export function AppSidebar({ companyName, role }: AppSidebarProps) {
           <Building2 className="h-4 w-4" aria-hidden="true" />
         </div>
         <div className="min-w-0">
-          <p className="truncate text-sm font-semibold">Altrion Voice</p>
+          <p className="truncate text-sm font-semibold">VoxLink Voice</p>
           <p className="truncate text-xs text-[var(--muted-foreground)]">Company console</p>
         </div>
       </div>

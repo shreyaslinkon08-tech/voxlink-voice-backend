@@ -37,7 +37,7 @@ export async function fetchWebsiteKnowledgeText(
       signal: controller.signal,
       headers: {
         accept: "text/html,text/plain,application/xhtml+xml;q=0.9,*/*;q=0.5",
-        "user-agent": "AltrionVoiceBot/0.1 (+https://altrion.local)"
+        "user-agent": "VoxLinkVoiceBot/0.1 (+https://voxlink.local)"
       }
     });
 

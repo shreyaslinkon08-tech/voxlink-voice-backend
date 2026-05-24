@@ -1,7 +1,7 @@
 param(
-  [string]$Container = "altrion-postgres",
-  [string]$Database = "altrion_voice",
-  [string]$User = "altrion",
+  [string]$Container = "voxlink-postgres",
+  [string]$Database = "voxlink_voice",
+  [string]$User = "voxlink",
   [string]$OutputDirectory = "backups"
 )
 

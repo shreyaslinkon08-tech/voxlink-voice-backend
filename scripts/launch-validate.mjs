@@ -132,7 +132,7 @@ async function checkHttpEndpoint(path, expectedStatus) {
 
   try {
     const response = await fetch(url, {
-      headers: { "user-agent": "altrion-launch-validate/1.0" }
+      headers: { "user-agent": "voxlink-launch-validate/1.0" }
     });
 
     if (response.status !== expectedStatus) {

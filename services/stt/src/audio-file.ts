@@ -1,4 +1,4 @@
-import type { SttTranscriptionRequest } from "@altrion/shared";
+import type { SttTranscriptionRequest } from "@voxlink/shared";
 
 export interface PreparedAudioFile {
   readonly blob: Blob;

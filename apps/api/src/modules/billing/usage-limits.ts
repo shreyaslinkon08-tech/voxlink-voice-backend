@@ -7,7 +7,7 @@ import {
   type ResourceLimitMetric,
   type SubscriptionPlan,
   type UsageLimitStatus
-} from "@altrion/shared";
+} from "@voxlink/shared";
 import { AppError } from "../../errors/app-error.js";
 import { currentMonthlyPeriod } from "../../utils/period.js";
 

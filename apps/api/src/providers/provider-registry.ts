@@ -1,4 +1,4 @@
-import type { ProviderKind, ProviderPort } from "@altrion/shared";
+import type { ProviderKind, ProviderPort } from "@voxlink/shared";
 
 export class ProviderRegistry {
   private readonly providers = new Map<string, ProviderPort>();

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Altrion Voice",
+  title: "VoxLink Voice",
   description: "Multi-tenant AI voice assistant platform"
 };
 

@@ -95,7 +95,7 @@ describe("loadConfig", () => {
 function baseEnv(): NodeJS.ProcessEnv {
   return {
     NODE_ENV: "development",
-    DATABASE_URL: "postgresql://user:pass@localhost:5432/altrion_voice?schema=public",
+    DATABASE_URL: "postgresql://user:pass@localhost:5432/voxlink_voice?schema=public",
     JWT_ACCESS_SECRET: "access_secret_1234567890_1234567890_safe",
     JWT_REFRESH_SECRET: "refresh_secret_1234567890_123456789_safe",
     COOKIE_SECRET: "cookie_secret_1234567890_1234567890_safe",

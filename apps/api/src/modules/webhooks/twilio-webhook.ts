@@ -1,6 +1,6 @@
 import { CallStatus, UsageMetric, type Prisma } from "@prisma/client";
 import type { FastifyInstance, FastifyRequest } from "fastify";
-import { parseFormBody, type TwilioTelephonyProvider } from "@altrion/telephony";
+import { parseFormBody, type TwilioTelephonyProvider } from "@voxlink/telephony";
 import { AppError } from "../../errors/app-error.js";
 import { assertCallStatusUpdate } from "../calls/call-state.js";
 import {

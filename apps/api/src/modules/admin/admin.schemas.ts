@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { planCodeValues } from "@altrion/shared";
+import { planCodeValues } from "@voxlink/shared";
 import { paginationQuerySchema } from "../../utils/pagination.js";
 
 export const adminCompanyStatusSchema = z.enum(["active", "suspended", "archived"]);

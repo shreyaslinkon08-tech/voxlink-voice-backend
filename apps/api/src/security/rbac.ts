@@ -1,6 +1,6 @@
 import type { FastifyRequest } from "fastify";
-import type { Permission } from "@altrion/shared";
-import { hasPermission } from "@altrion/shared";
+import type { Permission } from "@voxlink/shared";
+import { hasPermission } from "@voxlink/shared";
 import { AppError } from "../errors/app-error.js";
 import { requireTenantContext } from "./tenant-context.js";
 

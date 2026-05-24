@@ -1,6 +1,6 @@
 import { ZodError } from "zod";
 import type { FastifyInstance } from "fastify";
-import { ProviderRequestError } from "@altrion/shared";
+import { ProviderRequestError } from "@voxlink/shared";
 import { AppError } from "../errors/app-error.js";
 
 export function registerErrorHandler(app: FastifyInstance): void {
