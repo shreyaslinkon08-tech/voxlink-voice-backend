@@ -2,19 +2,19 @@ FROM node:24-alpine AS web
 
 WORKDIR /app
 
-ENV NODE_ENV=development
+ENV NEXT_TELEMETRY_DISABLED=1
 
 COPY package.json package-lock.json turbo.json tsconfig.base.json .npmrc ./
 COPY apps/web/package.json apps/web/package.json
 COPY packages/shared/package.json packages/shared/package.json
 
-RUN npm ci --include=dev
+RUN NODE_ENV=development npm ci --include=dev
 
 COPY apps/web apps/web
 COPY packages packages
 
-RUN npm run build -w @voxlink/shared
-RUN npm run build -w @voxlink/web
+RUN NODE_ENV=production npm run build -w @voxlink/shared
+RUN NODE_ENV=production npm run build -w @voxlink/web
 
 ENV NODE_ENV=production
 
