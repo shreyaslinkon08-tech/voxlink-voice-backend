@@ -1,0 +1,16 @@
+node_modules/
+dist/
+.next/
+coverage/
+.turbo/
+.npm-cache/
+.tmp/
+.env
+.env.*
+!.env.example
+!.env.*.example
+apps/api/prisma/generated/
+*.tsbuildinfo
+*.log
+.web-dev.*.log
+backups/

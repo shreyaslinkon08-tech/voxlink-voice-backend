@@ -1,0 +1,144 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: altrion-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-altrion_voice}
+      POSTGRES_USER: ${POSTGRES_USER:-altrion}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-altrion_dev_password}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: altrion-redis
+    ports:
+      - "6379:6379"
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  mailpit:
+    image: axllent/mailpit:v1.21
+    container_name: altrion-mailpit
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+
+  api:
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/api.Dockerfile
+    container_name: altrion-api
+    command: npm run dev -w @altrion/api
+    environment:
+      NODE_ENV: development
+      API_HOST: 0.0.0.0
+      API_PORT: 4000
+      API_PUBLIC_URL: http://localhost:4000
+      WEB_PUBLIC_URL: http://localhost:3000
+      WEB_ORIGIN: http://localhost:3000
+      DATABASE_URL: postgresql://altrion:altrion_dev_password@postgres:5432/altrion_voice?schema=public
+      REDIS_URL: redis://redis:6379
+      MAIL_HOST: mailpit
+      MAIL_PORT: 1025
+      MAIL_FROM: "Altrion Voice <no-reply@altrion.local>"
+      JWT_ACCESS_SECRET: replace-with-at-least-32-random-characters
+      JWT_REFRESH_SECRET: replace-with-another-32-random-characters
+      COOKIE_SECRET: replace-with-cookie-secret-at-least-32-chars
+      GOOGLE_OAUTH_CLIENT_ID: ${GOOGLE_OAUTH_CLIENT_ID:-}
+      GOOGLE_OAUTH_CLIENT_SECRET: ${GOOGLE_OAUTH_CLIENT_SECRET:-}
+      GOOGLE_OAUTH_REDIRECT_URL: ${GOOGLE_OAUTH_REDIRECT_URL:-http://localhost:4000/auth/google/callback}
+      BILLING_PROVIDER: ${BILLING_PROVIDER:-internal}
+      ALLOW_INTERNAL_BILLING_IN_PRODUCTION: ${ALLOW_INTERNAL_BILLING_IN_PRODUCTION:-false}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
+      STRIPE_API_BASE_URL: ${STRIPE_API_BASE_URL:-https://api.stripe.com}
+      STRIPE_PROVIDER_TIMEOUT_MS: ${STRIPE_PROVIDER_TIMEOUT_MS:-10000}
+      STRIPE_PRICE_ID_STARTER: ${STRIPE_PRICE_ID_STARTER:-}
+      STRIPE_PRICE_ID_GROWTH: ${STRIPE_PRICE_ID_GROWTH:-}
+      STRIPE_PRICE_ID_SCALE: ${STRIPE_PRICE_ID_SCALE:-}
+      TWILIO_ACCOUNT_SID: ${TWILIO_ACCOUNT_SID:-}
+      TWILIO_AUTH_TOKEN: replace-with-twilio-auth-token
+      TWILIO_API_BASE_URL: ${TWILIO_API_BASE_URL:-https://api.twilio.com}
+      TWILIO_PROVIDER_TIMEOUT_MS: ${TWILIO_PROVIDER_TIMEOUT_MS:-10000}
+      TWILIO_WEBHOOK_BASE_URL: https://example.ngrok-free.app
+      GROQ_API_KEYS: ${GROQ_API_KEYS:-}
+      GROQ_BASE_URL: ${GROQ_BASE_URL:-https://api.groq.com/openai/v1}
+      GROQ_PROVIDER_TIMEOUT_MS: ${GROQ_PROVIDER_TIMEOUT_MS:-20000}
+      GROQ_LLM_DEFAULT_PROFILE: ${GROQ_LLM_DEFAULT_PROFILE:-llama}
+      GROQ_LLM_MODEL_LLAMA: ${GROQ_LLM_MODEL_LLAMA:-llama-3.3-70b-versatile}
+      GROQ_LLM_MODEL_GEMMA: ${GROQ_LLM_MODEL_GEMMA:-gemma2-9b-it}
+      GROQ_LLM_MODEL_MIXTRAL: ${GROQ_LLM_MODEL_MIXTRAL:-}
+      GROQ_LLM_MODEL_GPT: ${GROQ_LLM_MODEL_GPT:-openai/gpt-oss-120b}
+      GROQ_STT_MODEL: ${GROQ_STT_MODEL:-whisper-large-v3-turbo}
+      GROQ_TTS_MODEL: ${GROQ_TTS_MODEL:-canopylabs/orpheus-v1-english}
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:4000/ready').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+        ]
+      interval: 30s
+      timeout: 5s
+      start_period: 20s
+      retries: 3
+    ports:
+      - "4000:4000"
+    volumes:
+      - ../..:/app
+      - api_node_modules:/app/node_modules
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  web:
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/web.Dockerfile
+    container_name: altrion-web
+    command: npm run dev -w @altrion/web
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:4000
+      INTERNAL_API_URL: http://api:4000
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3000/').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+        ]
+      interval: 30s
+      timeout: 5s
+      start_period: 20s
+      retries: 3
+    ports:
+      - "3000:3000"
+    volumes:
+      - ../..:/app
+      - web_node_modules:/app/node_modules
+    depends_on:
+      - api
+
+volumes:
+  postgres_data:
+  redis_data:
+  api_node_modules:
+  web_node_modules:

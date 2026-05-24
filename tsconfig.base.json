@@ -1,0 +1,36 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "allowJs": false,
+    "checkJs": false,
+    "declaration": true,
+    "declarationMap": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "isolatedModules": true,
+    "moduleDetection": "force",
+    "noEmitOnError": true,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitOverride": true,
+    "noImplicitReturns": true,
+    "noUncheckedIndexedAccess": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "baseUrl": ".",
+    "paths": {
+      "@altrion/shared": ["packages/shared/src/index.ts"],
+      "@altrion/stt": ["services/stt/src/index.ts"],
+      "@altrion/tts": ["services/tts/src/index.ts"],
+      "@altrion/llm": ["services/llm/src/index.ts"],
+      "@altrion/telephony": ["services/telephony/src/index.ts"],
+      "@altrion/rag": ["services/rag/src/index.ts"]
+    },
+    "verbatimModuleSyntax": true
+  }
+}

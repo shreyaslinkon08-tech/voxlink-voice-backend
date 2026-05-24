@@ -1,0 +1,18 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "noEmit": false,
+    "outDir": "dist",
+    "rootDir": "src"
+  },
+  "references": [
+    { "path": "../../packages/shared" },
+    { "path": "../../services/stt" },
+    { "path": "../../services/tts" },
+    { "path": "../../services/llm" },
+    { "path": "../../services/telephony" },
+    { "path": "../../services/rag" }
+  ],
+  "include": ["src/**/*.ts"]
+}

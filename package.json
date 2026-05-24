@@ -1,0 +1,41 @@
+{
+  "name": "altrion-voice-platform",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "npm@11.12.1",
+  "workspaces": [
+    "apps/*",
+    "packages/*",
+    "services/*"
+  ],
+  "scripts": {
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "typecheck": "turbo typecheck",
+    "lint": "turbo lint",
+    "test": "turbo test",
+    "format": "prettier --write \"**/*.{ts,tsx,js,mjs,cjs,json,md,css,yml,yaml}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,mjs,cjs,json,md,css,yml,yaml}\"",
+    "db:generate": "npm run db:generate -w @altrion/api",
+    "db:migrate": "npm run db:migrate -w @altrion/api",
+    "db:deploy": "npm run db:deploy -w @altrion/api",
+    "db:push": "npm run db:push -w @altrion/api",
+    "db:seed": "npm run db:seed -w @altrion/api",
+    "smoke:api": "node scripts/smoke-api.mjs",
+    "launch:validate": "node scripts/launch-validate.mjs",
+    "launch:migrate": "npm run db:deploy",
+    "launch:twilio-test": "node scripts/twilio-call-test.mjs",
+    "backup:postgres": "powershell -ExecutionPolicy Bypass -File scripts/backup-postgres.ps1",
+    "docker:up": "docker compose -f infrastructure/docker/docker-compose.yml up --build",
+    "docker:down": "docker compose -f infrastructure/docker/docker-compose.yml down"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.1",
+    "eslint": "^9.39.1",
+    "prettier": "^3.6.2",
+    "turbo": "^2.6.1",
+    "@types/node": "^24.10.1",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.47.0"
+  }
+}

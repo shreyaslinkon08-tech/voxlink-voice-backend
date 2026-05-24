@@ -1,0 +1,531 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [pgvector(map: "vector")]
+}
+
+enum UserRole {
+  super_admin   @map("super_admin")
+  company_admin @map("company_admin")
+  operator      @map("operator")
+
+  @@map("user_role")
+}
+
+enum CompanyStatus {
+  active    @map("active")
+  suspended @map("suspended")
+  archived  @map("archived")
+
+  @@map("company_status")
+}
+
+enum AiAgentStatus {
+  draft    @map("draft")
+  active   @map("active")
+  disabled @map("disabled")
+
+  @@map("ai_agent_status")
+}
+
+enum PhoneNumberStatus {
+  active   @map("active")
+  inactive @map("inactive")
+  released @map("released")
+
+  @@map("phone_number_status")
+}
+
+enum CallStatus {
+  initiated    @map("initiated")
+  ringing      @map("ringing")
+  connected    @map("connected")
+  listening    @map("listening")
+  processing   @map("processing")
+  responding   @map("responding")
+  transferring @map("transferring")
+  ended        @map("ended")
+  failed       @map("failed")
+
+  @@map("call_status")
+}
+
+enum TranscriptSpeakerRole {
+  caller    @map("caller")
+  assistant @map("assistant")
+  operator  @map("operator")
+  system    @map("system")
+
+  @@map("transcript_speaker_role")
+}
+
+enum KnowledgeSourceType {
+  file    @map("file")
+  website @map("website")
+  text    @map("text")
+
+  @@map("knowledge_source_type")
+}
+
+enum KnowledgeBaseStatus {
+  pending    @map("pending")
+  processing @map("processing")
+  ready      @map("ready")
+  failed     @map("failed")
+
+  @@map("knowledge_base_status")
+}
+
+enum SubscriptionStatus {
+  trialing @map("trialing")
+  active   @map("active")
+  past_due @map("past_due")
+  canceled @map("canceled")
+
+  @@map("subscription_status")
+}
+
+enum UsageMetric {
+  calls             @map("calls")
+  call_minutes      @map("call_minutes")
+  transcript_chunks @map("transcript_chunks")
+  knowledge_items   @map("knowledge_items")
+  llm_tokens        @map("llm_tokens")
+
+  @@map("usage_metric")
+}
+
+enum WebhookProvider {
+  twilio @map("twilio")
+  stripe @map("stripe")
+
+  @@map("webhook_provider")
+}
+
+enum WebhookProcessingStatus {
+  received  @map("received")
+  processed @map("processed")
+  duplicate @map("duplicate")
+  failed    @map("failed")
+
+  @@map("webhook_processing_status")
+}
+
+enum OperatorHandoffStatus {
+  requested @map("requested")
+  accepted  @map("accepted")
+  resolved  @map("resolved")
+
+  @@map("operator_handoff_status")
+}
+
+enum OAuthProvider {
+  google @map("google")
+
+  @@map("oauth_provider")
+}
+
+model User {
+  id                        String                   @id @default(uuid()) @db.Uuid
+  email                     String                   @unique
+  name                      String
+  passwordHash              String                   @map("password_hash")
+  emailVerifiedAt           DateTime?                @map("email_verified_at")
+  createdAt                 DateTime                 @default(now()) @map("created_at")
+  updatedAt                 DateTime                 @updatedAt @map("updated_at")
+  memberships               CompanyMembership[]
+  refreshSessions           RefreshSession[]
+  emailVerificationTokens   EmailVerificationToken[]
+  passwordResetTokens       PasswordResetToken[]
+  oauthIdentities           OAuthIdentity[]
+  auditEvents               AuditEvent[]
+  sentCompanyInvitations    CompanyInvitation[]      @relation("sent_company_invitations")
+  requestedOperatorHandoffs OperatorHandoff[]        @relation("requested_operator_handoffs")
+  acceptedOperatorHandoffs  OperatorHandoff[]        @relation("accepted_operator_handoffs")
+  resolvedOperatorHandoffs  OperatorHandoff[]        @relation("resolved_operator_handoffs")
+
+  @@index([emailVerifiedAt])
+  @@map("users")
+}
+
+model Company {
+  id               String              @id @default(uuid()) @db.Uuid
+  name             String
+  slug             String              @unique
+  status           CompanyStatus       @default(active)
+  createdAt        DateTime            @default(now()) @map("created_at")
+  updatedAt        DateTime            @updatedAt @map("updated_at")
+  memberships      CompanyMembership[]
+  aiAgents         AiAgent[]
+  phoneNumbers     PhoneNumber[]
+  calls            Call[]
+  transcriptChunks TranscriptChunk[]
+  callRecordings   CallRecording[]
+  knowledgeBase    KnowledgeBase[]
+  embeddings       Embedding[]
+  subscriptions    Subscription[]
+  usageTracking    UsageTracking[]
+  auditEvents      AuditEvent[]
+  webhookEvents    WebhookEvent[]
+  operatorHandoffs OperatorHandoff[]
+  invitations      CompanyInvitation[]
+
+  @@map("companies")
+}
+
+model CompanyMembership {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  companyId String   @map("company_id") @db.Uuid
+  role      UserRole
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, companyId])
+  @@index([companyId, role])
+  @@map("company_memberships")
+}
+
+model AiAgent {
+  id              String        @id @default(uuid()) @db.Uuid
+  companyId       String        @map("company_id") @db.Uuid
+  name            String
+  status          AiAgentStatus @default(draft)
+  systemPrompt    String        @map("system_prompt") @db.Text
+  personality     String?       @db.Text
+  voiceSettings   Json          @default("{}") @map("voice_settings")
+  businessHours   Json          @default("{}") @map("business_hours")
+  escalationRules Json          @default("{}") @map("escalation_rules")
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+  company         Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  phoneNumbers    PhoneNumber[]
+  calls           Call[]
+
+  @@index([companyId, status])
+  @@map("ai_agents")
+}
+
+model PhoneNumber {
+  id                String            @id @default(uuid()) @db.Uuid
+  companyId         String            @map("company_id") @db.Uuid
+  aiAgentId         String?           @map("ai_agent_id") @db.Uuid
+  e164              String            @unique
+  label             String?
+  provider          WebhookProvider   @default(twilio)
+  providerNumberSid String?           @unique @map("provider_number_sid")
+  status            PhoneNumberStatus @default(active)
+  createdAt         DateTime          @default(now()) @map("created_at")
+  updatedAt         DateTime          @updatedAt @map("updated_at")
+  company           Company           @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  aiAgent           AiAgent?          @relation(fields: [aiAgentId], references: [id], onDelete: SetNull)
+  calls             Call[]
+
+  @@index([companyId, status])
+  @@index([companyId, aiAgentId])
+  @@map("phone_numbers")
+}
+
+model Call {
+  id               String            @id @default(uuid()) @db.Uuid
+  companyId        String            @map("company_id") @db.Uuid
+  phoneNumberId    String?           @map("phone_number_id") @db.Uuid
+  aiAgentId        String?           @map("ai_agent_id") @db.Uuid
+  provider         WebhookProvider   @default(twilio)
+  providerCallId   String            @map("provider_call_id")
+  fromNumber       String            @map("from_number")
+  toNumber         String            @map("to_number")
+  status           CallStatus        @default(initiated)
+  startedAt        DateTime?         @map("started_at")
+  endedAt          DateTime?         @map("ended_at")
+  failureReason    String?           @map("failure_reason") @db.Text
+  metadata         Json              @default("{}")
+  createdAt        DateTime          @default(now()) @map("created_at")
+  updatedAt        DateTime          @updatedAt @map("updated_at")
+  company          Company           @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  phoneNumber      PhoneNumber?      @relation(fields: [phoneNumberId], references: [id], onDelete: SetNull)
+  aiAgent          AiAgent?          @relation(fields: [aiAgentId], references: [id], onDelete: SetNull)
+  transcriptChunks TranscriptChunk[]
+  recordings       CallRecording[]
+  webhookEvents    WebhookEvent[]
+  operatorHandoffs OperatorHandoff[]
+
+  @@unique([provider, providerCallId])
+  @@index([companyId, status, createdAt])
+  @@index([companyId, providerCallId])
+  @@map("calls")
+}
+
+model TranscriptChunk {
+  id          String                @id @default(uuid()) @db.Uuid
+  companyId   String                @map("company_id") @db.Uuid
+  callId      String                @map("call_id") @db.Uuid
+  sequence    Int
+  speakerRole TranscriptSpeakerRole @map("speaker_role")
+  text        String                @db.Text
+  startedAtMs Int?                  @map("started_at_ms")
+  endedAtMs   Int?                  @map("ended_at_ms")
+  confidence  Decimal?              @db.Decimal(5, 4)
+  metadata    Json                  @default("{}")
+  createdAt   DateTime              @default(now()) @map("created_at")
+  company     Company               @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  call        Call                  @relation(fields: [callId], references: [id], onDelete: Cascade)
+
+  @@unique([callId, sequence])
+  @@index([companyId, callId])
+  @@map("transcript_chunks")
+}
+
+model CallRecording {
+  id                  String          @id @default(uuid()) @db.Uuid
+  companyId           String          @map("company_id") @db.Uuid
+  callId              String          @map("call_id") @db.Uuid
+  provider            WebhookProvider @default(twilio)
+  providerRecordingId String          @map("provider_recording_id")
+  status              String
+  recordingUrl        String?         @map("recording_url") @db.Text
+  durationSeconds     Int?            @map("duration_seconds")
+  channels            Int?
+  source              String?
+  metadata            Json            @default("{}")
+  createdAt           DateTime        @default(now()) @map("created_at")
+  updatedAt           DateTime        @updatedAt @map("updated_at")
+  company             Company         @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  call                Call            @relation(fields: [callId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerRecordingId])
+  @@index([companyId, createdAt])
+  @@index([callId, createdAt])
+  @@map("call_recordings")
+}
+
+model KnowledgeBase {
+  id               String              @id @default(uuid()) @db.Uuid
+  companyId        String              @map("company_id") @db.Uuid
+  title            String
+  sourceType       KnowledgeSourceType @map("source_type")
+  status           KnowledgeBaseStatus @default(pending)
+  originalFileName String?             @map("original_file_name")
+  sourceUri        String?             @map("source_uri")
+  mimeType         String?             @map("mime_type")
+  contentSha256    String?             @map("content_sha256")
+  metadata         Json                @default("{}")
+  createdAt        DateTime            @default(now()) @map("created_at")
+  updatedAt        DateTime            @updatedAt @map("updated_at")
+  company          Company             @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  embeddings       Embedding[]
+
+  @@index([companyId, status])
+  @@map("knowledge_base")
+}
+
+model Embedding {
+  id              String                       @id @default(uuid()) @db.Uuid
+  companyId       String                       @map("company_id") @db.Uuid
+  knowledgeBaseId String                       @map("knowledge_base_id") @db.Uuid
+  chunkIndex      Int                          @map("chunk_index")
+  chunkText       String                       @map("chunk_text") @db.Text
+  embedding       Unsupported("vector(1536)")?
+  metadata        Json                         @default("{}")
+  createdAt       DateTime                     @default(now()) @map("created_at")
+  company         Company                      @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  knowledgeBase   KnowledgeBase                @relation(fields: [knowledgeBaseId], references: [id], onDelete: Cascade)
+
+  @@unique([knowledgeBaseId, chunkIndex])
+  @@index([companyId, knowledgeBaseId])
+  @@map("embeddings")
+}
+
+model Subscription {
+  id                     String             @id @default(uuid()) @db.Uuid
+  companyId              String             @map("company_id") @db.Uuid
+  status                 SubscriptionStatus @default(trialing)
+  planCode               String             @map("plan_code")
+  providerCustomerId     String?            @map("provider_customer_id")
+  providerSubscriptionId String?            @map("provider_subscription_id")
+  currentPeriodStart     DateTime?          @map("current_period_start")
+  currentPeriodEnd       DateTime?          @map("current_period_end")
+  createdAt              DateTime           @default(now()) @map("created_at")
+  updatedAt              DateTime           @updatedAt @map("updated_at")
+  company                Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([providerSubscriptionId])
+  @@index([companyId, status])
+  @@index([providerCustomerId])
+  @@map("subscriptions")
+}
+
+model UsageTracking {
+  id          String      @id @default(uuid()) @db.Uuid
+  companyId   String      @map("company_id") @db.Uuid
+  metric      UsageMetric
+  amount      Decimal     @default(0) @db.Decimal(18, 6)
+  periodStart DateTime    @map("period_start")
+  periodEnd   DateTime    @map("period_end")
+  createdAt   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime    @updatedAt @map("updated_at")
+  company     Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, metric, periodStart, periodEnd])
+  @@index([companyId, periodStart, periodEnd])
+  @@map("usage_tracking")
+}
+
+model RefreshSession {
+  id            String    @id @default(uuid()) @db.Uuid
+  userId        String    @map("user_id") @db.Uuid
+  tokenHash     String    @unique @map("token_hash")
+  userAgent     String?   @map("user_agent")
+  ipAddress     String?   @map("ip_address")
+  expiresAt     DateTime  @map("expires_at")
+  revokedAt     DateTime? @map("revoked_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  rotatedFromId String?   @map("rotated_from_id") @db.Uuid
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, revokedAt])
+  @@index([expiresAt])
+  @@map("refresh_sessions")
+}
+
+model EmailVerificationToken {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  tokenHash String    @unique @map("token_hash")
+  expiresAt DateTime  @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, usedAt])
+  @@index([expiresAt])
+  @@map("email_verification_tokens")
+}
+
+model PasswordResetToken {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  tokenHash String    @unique @map("token_hash")
+  expiresAt DateTime  @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, usedAt])
+  @@index([expiresAt])
+  @@map("password_reset_tokens")
+}
+
+model OAuthIdentity {
+  id              String        @id @default(uuid()) @db.Uuid
+  userId          String        @map("user_id") @db.Uuid
+  provider        OAuthProvider
+  providerSubject String        @map("provider_subject")
+  email           String?
+  metadata        Json          @default("{}")
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerSubject])
+  @@index([userId, provider])
+  @@map("oauth_identities")
+}
+
+model CompanyInvitation {
+  id              String    @id @default(uuid()) @db.Uuid
+  companyId       String    @map("company_id") @db.Uuid
+  email           String
+  role            UserRole
+  tokenHash       String    @unique @map("token_hash")
+  expiresAt       DateTime  @map("expires_at")
+  acceptedAt      DateTime? @map("accepted_at")
+  invitedByUserId String?   @map("invited_by_user_id") @db.Uuid
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+  company         Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  invitedBy       User?     @relation("sent_company_invitations", fields: [invitedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([companyId, email])
+  @@index([email, acceptedAt])
+  @@index([expiresAt])
+  @@map("company_invitations")
+}
+
+model AuditEvent {
+  id           String   @id @default(uuid()) @db.Uuid
+  companyId    String?  @map("company_id") @db.Uuid
+  actorUserId  String?  @map("actor_user_id") @db.Uuid
+  action       String
+  resourceType String   @map("resource_type")
+  resourceId   String?  @map("resource_id")
+  requestId    String?  @map("request_id")
+  ipAddress    String?  @map("ip_address")
+  userAgent    String?  @map("user_agent")
+  metadata     Json     @default("{}")
+  createdAt    DateTime @default(now()) @map("created_at")
+  company      Company? @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  actor        User?    @relation(fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([companyId, createdAt])
+  @@index([actorUserId, createdAt])
+  @@index([resourceType, resourceId])
+  @@map("audit_events")
+}
+
+model WebhookEvent {
+  id               String                  @id @default(uuid()) @db.Uuid
+  provider         WebhookProvider
+  providerEventId  String                  @map("provider_event_id")
+  providerCallId   String?                 @map("provider_call_id")
+  payloadHash      String                  @map("payload_hash")
+  processingStatus WebhookProcessingStatus @default(received) @map("processing_status")
+  companyId        String?                 @map("company_id") @db.Uuid
+  callId           String?                 @map("call_id") @db.Uuid
+  rawPayload       Json?                   @map("raw_payload")
+  errorMessage     String?                 @map("error_message") @db.Text
+  receivedAt       DateTime                @default(now()) @map("received_at")
+  processedAt      DateTime?               @map("processed_at")
+  company          Company?                @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  call             Call?                   @relation(fields: [callId], references: [id], onDelete: SetNull)
+
+  @@unique([provider, providerEventId])
+  @@index([provider, providerCallId])
+  @@index([companyId, receivedAt])
+  @@map("webhook_events")
+}
+
+model OperatorHandoff {
+  id                String                @id @default(uuid()) @db.Uuid
+  companyId         String                @map("company_id") @db.Uuid
+  callId            String                @map("call_id") @db.Uuid
+  status            OperatorHandoffStatus @default(requested)
+  reason            String?               @db.Text
+  notes             String?               @db.Text
+  requestedByUserId String?               @map("requested_by_user_id") @db.Uuid
+  acceptedByUserId  String?               @map("accepted_by_user_id") @db.Uuid
+  resolvedByUserId  String?               @map("resolved_by_user_id") @db.Uuid
+  requestedAt       DateTime              @default(now()) @map("requested_at")
+  acceptedAt        DateTime?             @map("accepted_at")
+  resolvedAt        DateTime?             @map("resolved_at")
+  createdAt         DateTime              @default(now()) @map("created_at")
+  updatedAt         DateTime              @updatedAt @map("updated_at")
+  company           Company               @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  call              Call                  @relation(fields: [callId], references: [id], onDelete: Cascade)
+  requestedBy       User?                 @relation("requested_operator_handoffs", fields: [requestedByUserId], references: [id], onDelete: SetNull)
+  acceptedBy        User?                 @relation("accepted_operator_handoffs", fields: [acceptedByUserId], references: [id], onDelete: SetNull)
+  resolvedBy        User?                 @relation("resolved_operator_handoffs", fields: [resolvedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([companyId, status, requestedAt])
+  @@index([callId, status])
+  @@index([requestedByUserId, requestedAt])
+  @@index([acceptedByUserId, acceptedAt])
+  @@map("operator_handoffs")
+}
