@@ -1,8 +1,8 @@
-FROM node:24-alpine AS base
+FROM node:24-alpine AS api
 
 WORKDIR /app
 
-ENV NODE_ENV=production
+ENV NODE_ENV=development
 
 COPY package.json package-lock.json turbo.json tsconfig.base.json .npmrc ./
 COPY apps/api/package.json apps/api/package.json
@@ -13,7 +13,7 @@ COPY services/llm/package.json services/llm/package.json
 COPY services/telephony/package.json services/telephony/package.json
 COPY services/rag/package.json services/rag/package.json
 
-RUN npm ci
+RUN npm ci --include=dev
 
 COPY apps/api apps/api
 COPY packages packages
@@ -27,6 +27,8 @@ RUN npm run build -w @voxlink/llm
 RUN npm run build -w @voxlink/telephony
 RUN npm run build -w @voxlink/rag
 RUN npm run build -w @voxlink/api
+
+ENV NODE_ENV=production
 
 EXPOSE 4000
 

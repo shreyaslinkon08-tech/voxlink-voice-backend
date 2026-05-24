@@ -133,7 +133,19 @@ deployed web/API runtimes.
 
 ## Railway Backend Deploy
 
-Create a Railway service from this GitHub repository and use the root `Dockerfile`.
+Create one Railway service from this GitHub repository and use the repository root
+with the root `Dockerfile`. Do not deploy `@voxlink/stt`, `@voxlink/tts`,
+`@voxlink/llm`, `@voxlink/rag`, or `@voxlink/telephony` as separate Railway services;
+they are internal npm packages used by the API runtime.
+
+If Railway auto-stages one service per npm workspace during import, remove the
+internal package services and keep a single API service configured with:
+
+- Root Directory: empty / repository root
+- Builder: Dockerfile
+- Dockerfile path: `Dockerfile`
+- Healthcheck path: `/ready`
+
 Add Railway Postgres and Redis plugins, then set these API variables in Railway:
 `NODE_ENV=production`, `DATABASE_URL`, `REDIS_URL`, `JWT_ACCESS_SECRET`,
 `JWT_REFRESH_SECRET`, `COOKIE_SECRET`, `API_PUBLIC_URL`, `WEB_PUBLIC_URL`,
