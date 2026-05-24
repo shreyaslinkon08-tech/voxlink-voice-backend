@@ -1,0 +1,13 @@
+{
+  "extends": "./tsconfig.json",
+  "references": [
+    { "path": "../../packages/shared/tsconfig.build.json" },
+    { "path": "../../services/stt/tsconfig.build.json" },
+    { "path": "../../services/tts/tsconfig.build.json" },
+    { "path": "../../services/llm/tsconfig.build.json" },
+    { "path": "../../services/telephony/tsconfig.build.json" },
+    { "path": "../../services/rag/tsconfig.build.json" }
+  ],
+  "include": ["src/**/*.ts"],
+  "exclude": ["src/**/*.test.ts", "src/**/*.spec.ts"]
+}
