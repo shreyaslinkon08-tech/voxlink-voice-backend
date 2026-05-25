@@ -17,7 +17,7 @@ if (!target) {
 
 if (target === "api") {
   await run("npm", ["run", "db:deploy", "-w", "@voxlink/api"]);
-  await run("npm", ["run", "start", "-w", "@voxlink/api"]);
+  await run("npm", ["run", "serve", "-w", "@voxlink/api"]);
 }
 
 if (target === "web") {
