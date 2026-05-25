@@ -12,6 +12,7 @@ import {
   googleOAuthCallbackQuerySchema,
   googleOAuthStartQuerySchema,
   loginSchema,
+  resendVerificationEmailSchema,
   resetPasswordSchema,
   signupSchema,
   verifyEmailQuerySchema
@@ -23,6 +24,7 @@ import {
   getCurrentUser,
   login,
   refreshSession,
+  resendVerificationEmail,
   resetPassword,
   revokeRefreshSession,
   signup,
@@ -92,7 +94,8 @@ export const authRoutes: FastifyPluginCallback = (app, _options, done) => {
     reply.status(201);
     return {
       user: result.user,
-      emailVerificationRequired: true
+      emailVerificationRequired: true,
+      emailDeliveryStatus: result.emailDeliveryStatus
     };
   });
 
@@ -159,6 +162,16 @@ export const authRoutes: FastifyPluginCallback = (app, _options, done) => {
     await forgotPassword(app, input);
 
     return { ok: true };
+  });
+
+  app.post("/resend-verification-email", async (request) => {
+    const input = resendVerificationEmailSchema.parse(request.body);
+    const result = await resendVerificationEmail(app, input);
+
+    return {
+      ok: true,
+      emailDeliveryStatus: result.emailDeliveryStatus
+    };
   });
 
   app.post("/reset-password", async (request) => {

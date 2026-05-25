@@ -16,6 +16,9 @@ export function createSmtpEmailSender(config: AppConfig): EmailSender {
     host: config.MAIL_HOST,
     port: config.MAIL_PORT,
     secure: config.MAIL_SECURE,
+    connectionTimeout: config.MAIL_SEND_TIMEOUT_MS,
+    greetingTimeout: config.MAIL_SEND_TIMEOUT_MS,
+    socketTimeout: config.MAIL_SEND_TIMEOUT_MS,
     ...(config.MAIL_USER && config.MAIL_PASSWORD
       ? {
           auth: {

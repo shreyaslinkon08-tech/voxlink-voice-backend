@@ -10,6 +10,7 @@ import type {
   GoogleOAuthCallbackQuery,
   GoogleOAuthStartQuery,
   LoginInput,
+  ResendVerificationEmailInput,
   ResetPasswordInput,
   SignupInput
 } from "./auth.schemas.js";
@@ -50,6 +51,8 @@ type AuthUserRecord = {
     company: { name: string; status?: string };
   }[];
 };
+
+type EmailDeliveryStatus = "sent" | "failed";
 
 function isUniqueConstraintError(error: unknown): boolean {
   return error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002";
@@ -99,6 +102,50 @@ function userResponse(user: {
       role: membership.role
     }))
   };
+}
+
+async function sendVerificationEmail(
+  app: FastifyInstance,
+  user: { readonly email: string; readonly name: string },
+  verificationToken: string
+): Promise<EmailDeliveryStatus> {
+  const verificationUrl = `${app.config.WEB_PUBLIC_URL}/verify-email?token=${verificationToken}`;
+
+  try {
+    await withTimeout(
+      app.emailJobs.enqueueVerificationEmail({
+        email: user.email,
+        name: user.name,
+        verificationUrl
+      }),
+      app.config.MAIL_SEND_TIMEOUT_MS,
+      "Verification email delivery timed out"
+    );
+
+    return "sent";
+  } catch (error) {
+    app.log.error({ error, email: user.email }, "Failed to send verification email");
+    return "failed";
+  }
+}
+
+async function withTimeout<T>(
+  operation: Promise<T>,
+  timeoutMs: number,
+  message: string
+): Promise<T> {
+  let timeout: ReturnType<typeof setTimeout> | undefined;
+  const timeoutPromise = new Promise<never>((_resolve, reject) => {
+    timeout = setTimeout(() => reject(new Error(message)), timeoutMs);
+  });
+
+  try {
+    return await Promise.race([operation, timeoutPromise]);
+  } finally {
+    if (timeout) {
+      clearTimeout(timeout);
+    }
+  }
 }
 
 function googleOAuthRedirectUrl(app: FastifyInstance): string {
@@ -615,7 +662,7 @@ async function acceptInvitationForExistingUser(
 export async function signup(
   app: FastifyInstance,
   input: SignupInput
-): Promise<{ user: AuthenticatedUser }> {
+): Promise<{ user: AuthenticatedUser; emailDeliveryStatus: EmailDeliveryStatus }> {
   const now = new Date();
   const existingUser = await app.prisma.user.findUnique({
     where: { email: input.email },
@@ -750,14 +797,9 @@ export async function signup(
       return user;
     });
 
-    const verificationUrl = `${app.config.WEB_PUBLIC_URL}/verify-email?token=${verificationToken}`;
-    await app.emailJobs.enqueueVerificationEmail({
-      email: created.email,
-      name: created.name,
-      verificationUrl
-    });
+    const emailDeliveryStatus = await sendVerificationEmail(app, created, verificationToken);
 
-    return { user: userResponse(created) };
+    return { user: userResponse(created), emailDeliveryStatus };
   } catch (error) {
     if (isUniqueConstraintError(error)) {
       throw AppError.conflict("Account or company already exists");
@@ -860,6 +902,51 @@ export async function verifyEmail(app: FastifyInstance, token: string): Promise<
       data: { emailVerifiedAt: now }
     })
   ]);
+}
+
+export async function resendVerificationEmail(
+  app: FastifyInstance,
+  input: ResendVerificationEmailInput
+): Promise<{ emailDeliveryStatus: EmailDeliveryStatus }> {
+  const user = await app.prisma.user.findUnique({
+    where: { email: input.email },
+    select: {
+      id: true,
+      email: true,
+      name: true,
+      emailVerifiedAt: true
+    }
+  });
+
+  if (!user || user.emailVerifiedAt) {
+    return { emailDeliveryStatus: "sent" };
+  }
+
+  const now = new Date();
+  const verificationToken = createOpaqueToken();
+  const verificationTokenHash = hashToken(verificationToken);
+
+  await app.prisma.$transaction([
+    app.prisma.emailVerificationToken.updateMany({
+      where: {
+        userId: user.id,
+        usedAt: null
+      },
+      data: {
+        usedAt: now
+      }
+    }),
+    app.prisma.emailVerificationToken.create({
+      data: {
+        userId: user.id,
+        tokenHash: verificationTokenHash,
+        expiresAt: new Date(Date.now() + emailVerificationTtlMs)
+      }
+    })
+  ]);
+
+  const emailDeliveryStatus = await sendVerificationEmail(app, user, verificationToken);
+  return { emailDeliveryStatus };
 }
 
 export async function forgotPassword(

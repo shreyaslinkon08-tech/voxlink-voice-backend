@@ -11,10 +11,14 @@ interface SignupFormProps {
   readonly initialError?: string;
 }
 
+interface SignupResponse {
+  readonly emailDeliveryStatus?: "sent" | "failed";
+}
+
 export function SignupForm({ invitationToken, initialError }: SignupFormProps) {
   const formRef = useRef<HTMLFormElement>(null);
   const [error, setError] = useState<string | null>(initialError ?? null);
-  const [success, setSuccess] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -25,7 +29,7 @@ export function SignupForm({ invitationToken, initialError }: SignupFormProps) {
     const form = new FormData(event.currentTarget);
 
     try {
-      await clientApi("/auth/signup", {
+      const result = await clientApi<SignupResponse>("/auth/signup", {
         method: "POST",
         body: JSON.stringify({
           name: form.get("name"),
@@ -35,7 +39,11 @@ export function SignupForm({ invitationToken, initialError }: SignupFormProps) {
           invitationToken
         })
       });
-      setSuccess(true);
+      setSuccessMessage(
+        result.emailDeliveryStatus === "failed"
+          ? "Account created, but the verification email could not be delivered. Use the resend link on the sign-in page after email settings are fixed."
+          : "Account created. Check your inbox for the verification link before logging in."
+      );
       event.currentTarget.reset();
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Signup failed");
@@ -69,10 +77,9 @@ export function SignupForm({ invitationToken, initialError }: SignupFormProps) {
   return (
     <Card>
       <CardContent className="p-5">
-        {success ? (
+        {successMessage ? (
           <p className="text-sm text-emerald-700">
-            Account created. Check Mailpit or your SMTP inbox for the verification link before
-            logging in.
+            {successMessage}
           </p>
         ) : (
           <form ref={formRef} className="space-y-4" onSubmit={(event) => void onSubmit(event)}>

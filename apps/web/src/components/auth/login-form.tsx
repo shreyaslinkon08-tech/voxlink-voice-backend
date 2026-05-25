@@ -15,30 +15,74 @@ interface LoginFormProps {
 export function LoginForm({ initialError }: LoginFormProps) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(initialError ?? null);
+  const [verificationEmail, setVerificationEmail] = useState<string | null>(null);
+  const [resendMessage, setResendMessage] = useState<string | null>(null);
+  const [resending, setResending] = useState(false);
   const [loading, setLoading] = useState(false);
   const googleLoginUrl = `${publicApiUrl}/auth/google/start?mode=login`;
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
+    setVerificationEmail(null);
+    setResendMessage(null);
     setLoading(true);
 
     const form = new FormData(event.currentTarget);
+    const email = form.get("email");
 
     try {
       await clientApi("/auth/login", {
         method: "POST",
         body: JSON.stringify({
-          email: form.get("email"),
+          email,
           password: form.get("password")
         })
       });
       router.push("/dashboard");
       router.refresh();
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Login failed");
+      const message = caught instanceof Error ? caught.message : "Login failed";
+      setError(message);
+
+      if (
+        message.toLowerCase().includes("email verification") &&
+        typeof email === "string" &&
+        email.trim()
+      ) {
+        setVerificationEmail(email.trim());
+      }
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function resendVerificationEmail() {
+    if (!verificationEmail) {
+      return;
+    }
+
+    setResending(true);
+    setResendMessage(null);
+
+    try {
+      const result = await clientApi<{ emailDeliveryStatus?: "sent" | "failed" }>(
+        "/auth/resend-verification-email",
+        {
+          method: "POST",
+          body: JSON.stringify({ email: verificationEmail })
+        }
+      );
+
+      setResendMessage(
+        result.emailDeliveryStatus === "failed"
+          ? "Verification email could not be delivered. Please check email settings and try again."
+          : "Verification email sent. Check your inbox."
+      );
+    } catch (caught) {
+      setResendMessage(caught instanceof Error ? caught.message : "Could not resend email");
+    } finally {
+      setResending(false);
     }
   }
 
@@ -73,6 +117,22 @@ export function LoginForm({ initialError }: LoginFormProps) {
             </Button>
           </div>
           {error ? <p className="text-sm text-[var(--destructive)]">{error}</p> : null}
+          {verificationEmail ? (
+            <div className="flex flex-col gap-2 text-sm">
+              <Button
+                className="w-fit"
+                type="button"
+                variant="outline"
+                disabled={resending}
+                onClick={() => void resendVerificationEmail()}
+              >
+                {resending ? "Sending verification" : "Resend verification email"}
+              </Button>
+              {resendMessage ? (
+                <p className="text-[var(--muted-foreground)]">{resendMessage}</p>
+              ) : null}
+            </div>
+          ) : null}
         </form>
       </CardContent>
     </Card>

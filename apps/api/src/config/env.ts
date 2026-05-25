@@ -38,6 +38,7 @@ const envSchema = z.object({
   MAIL_SECURE: booleanEnvSchema.default(false),
   MAIL_USER: z.string().default(""),
   MAIL_PASSWORD: z.string().default(""),
+  MAIL_SEND_TIMEOUT_MS: z.coerce.number().int().positive().default(10_000),
   MAIL_FROM: z.string().min(1).default("VoxLink Voice <no-reply@voxlink.local>"),
   JWT_ACCESS_SECRET: z.string().min(32),
   JWT_REFRESH_SECRET: z.string().min(32),
