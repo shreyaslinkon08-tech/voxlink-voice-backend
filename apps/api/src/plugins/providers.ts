@@ -9,15 +9,22 @@ import { ProviderRegistry } from "../providers/provider-registry.js";
 export const providersPlugin = fp((app, _options, done) => {
   const registry = new ProviderRegistry();
   const groqApiKeys = parseCsv(app.config.GROQ_API_KEYS);
-
-  registry.register(
-    new TwilioTelephonyProvider({
-      accountSid: app.config.TWILIO_ACCOUNT_SID,
-      authToken: app.config.TWILIO_AUTH_TOKEN,
-      apiBaseUrl: app.config.TWILIO_API_BASE_URL,
-      requestTimeoutMs: app.config.TWILIO_PROVIDER_TIMEOUT_MS
-    })
+  const twilioConfigured = Boolean(
+    app.config.TWILIO_ACCOUNT_SID.trim() && app.config.TWILIO_AUTH_TOKEN.trim()
   );
+
+  if (!twilioConfigured) {
+    app.log.warn("Twilio provider was not registered because credentials are incomplete");
+  } else {
+    registry.register(
+      new TwilioTelephonyProvider({
+        accountSid: app.config.TWILIO_ACCOUNT_SID,
+        authToken: app.config.TWILIO_AUTH_TOKEN,
+        apiBaseUrl: app.config.TWILIO_API_BASE_URL,
+        requestTimeoutMs: app.config.TWILIO_PROVIDER_TIMEOUT_MS
+      })
+    );
+  }
 
   if (groqApiKeys.length === 0) {
     app.log.warn("Groq providers were not registered because GROQ_API_KEYS is empty");

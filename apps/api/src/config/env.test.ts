@@ -47,6 +47,29 @@ describe("loadConfig", () => {
     expect(config.NODE_ENV).toBe("production");
   });
 
+  it("allows production startup while provider credentials are still pending", () => {
+    const config = loadConfig({
+      ...baseEnv(),
+      NODE_ENV: "production",
+      API_PUBLIC_URL: "https://api.example.com",
+      WEB_PUBLIC_URL: "http://localhost:3000",
+      WEB_ORIGIN: "http://localhost:3000",
+      TWILIO_WEBHOOK_BASE_URL: "http://localhost:4000",
+      JWT_ACCESS_SECRET: "access_secret_1234567890_1234567890_safe",
+      JWT_REFRESH_SECRET: "refresh_secret_1234567890_123456789_safe",
+      COOKIE_SECRET: "cookie_secret_1234567890_1234567890_safe",
+      TWILIO_ACCOUNT_SID: "",
+      TWILIO_AUTH_TOKEN: "",
+      GROQ_API_KEYS: "",
+      BILLING_PROVIDER: "internal",
+      ALLOW_INTERNAL_BILLING_IN_PRODUCTION: "true"
+    });
+
+    expect(config.WEB_PUBLIC_URL).toBe("https://api.example.com");
+    expect(config.WEB_ORIGIN).toBe("https://api.example.com");
+    expect(config.TWILIO_WEBHOOK_BASE_URL).toBe("https://api.example.com");
+  });
+
   it("requires Google OAuth credentials to be configured as a pair in production", () => {
     expect(() =>
       loadConfig({

@@ -1,13 +1,22 @@
 import "dotenv/config";
 import { buildApp } from "./app.js";
-import { loadConfig } from "./config/env.js";
+import { type AppConfig, loadConfig } from "./config/env.js";
 
-const config = loadConfig();
+let config: AppConfig;
+
+try {
+  config = loadConfig();
+} catch (error) {
+  console.error(error);
+  process.exit(1);
+}
+
 const app = await buildApp(config);
 let isShuttingDown = false;
 
 try {
   await app.listen({ host: config.API_HOST, port: config.API_PORT });
+  app.log.info({ host: config.API_HOST, port: config.API_PORT }, "API server is listening");
 } catch (error) {
   app.log.error({ error }, "Failed to start API server");
   process.exit(1);

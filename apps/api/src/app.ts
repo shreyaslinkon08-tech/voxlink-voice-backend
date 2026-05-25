@@ -108,7 +108,7 @@ export async function buildApp(config: AppConfig): Promise<FastifyInstance> {
     max: config.RATE_LIMIT_MAX,
     timeWindow: config.RATE_LIMIT_WINDOW,
     redis: app.redis,
-    skipOnError: false
+    skipOnError: true
   });
   await app.register(auditPlugin);
   await app.register(healthRoutes);

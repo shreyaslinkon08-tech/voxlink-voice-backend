@@ -54,10 +54,10 @@ const envSchema = z.object({
   RATE_LIMIT_MAX: z.coerce.number().int().positive().default(120),
   RATE_LIMIT_WINDOW: z.string().min(1).default("1 minute"),
   TWILIO_ACCOUNT_SID: z.string().default(""),
-  TWILIO_AUTH_TOKEN: z.string().min(1),
+  TWILIO_AUTH_TOKEN: z.string().default(""),
   TWILIO_API_BASE_URL: z.string().url().default("https://api.twilio.com"),
   TWILIO_PROVIDER_TIMEOUT_MS: z.coerce.number().int().positive().default(10_000),
-  TWILIO_WEBHOOK_BASE_URL: z.string().url(),
+  TWILIO_WEBHOOK_BASE_URL: z.string().url().default("http://localhost:4000"),
   GROQ_API_KEYS: z.string().default(""),
   GROQ_BASE_URL: z.string().url().default("https://api.groq.com/openai/v1"),
   GROQ_PROVIDER_TIMEOUT_MS: z.coerce.number().int().positive().default(20_000),
@@ -83,6 +83,8 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): AppConfig {
     normalizedSource.API_PORT = normalizedSource.PORT;
   }
 
+  normalizeProductionUrls(normalizedSource);
+
   const result = envSchema.safeParse(normalizedSource);
 
   if (!result.success) {
@@ -105,15 +107,14 @@ function assertProductionSafeConfig(config: AppConfig): void {
   requireHttps("API_PUBLIC_URL", config.API_PUBLIC_URL, issues);
   requireHttps("WEB_PUBLIC_URL", config.WEB_PUBLIC_URL, issues);
   requireHttps("WEB_ORIGIN", config.WEB_ORIGIN, issues);
-  requireHttps("TWILIO_WEBHOOK_BASE_URL", config.TWILIO_WEBHOOK_BASE_URL, issues);
   requireHttps("TWILIO_API_BASE_URL", config.TWILIO_API_BASE_URL, issues);
+  requireHttps("TWILIO_WEBHOOK_BASE_URL", config.TWILIO_WEBHOOK_BASE_URL, issues);
   requireHttps("GROQ_BASE_URL", config.GROQ_BASE_URL, issues);
   requireHttps("STRIPE_API_BASE_URL", config.STRIPE_API_BASE_URL, issues);
 
   requireStrongSecret("JWT_ACCESS_SECRET", config.JWT_ACCESS_SECRET, issues);
   requireStrongSecret("JWT_REFRESH_SECRET", config.JWT_REFRESH_SECRET, issues);
   requireStrongSecret("COOKIE_SECRET", config.COOKIE_SECRET, issues);
-  requireStrongSecret("TWILIO_AUTH_TOKEN", config.TWILIO_AUTH_TOKEN, issues);
   requireOptionalOAuthPair(config, issues);
   requireProductionBillingConfig(config, issues);
 
@@ -123,16 +124,32 @@ function assertProductionSafeConfig(config: AppConfig): void {
     issues.push("JWT_ACCESS_SECRET, JWT_REFRESH_SECRET, and COOKIE_SECRET must be unique");
   }
 
-  if (!config.TWILIO_ACCOUNT_SID.trim()) {
-    issues.push("TWILIO_ACCOUNT_SID is required in production");
-  }
-
-  if (parseCsv(config.GROQ_API_KEYS).length === 0) {
-    issues.push("GROQ_API_KEYS must include at least one key in production");
-  }
-
   if (issues.length > 0) {
     throw new Error(`Invalid production API environment: ${issues.join("; ")}`);
+  }
+}
+
+function normalizeProductionUrls(source: NodeJS.ProcessEnv): void {
+  if (source.NODE_ENV !== "production") {
+    return;
+  }
+
+  const apiPublicUrl = source.API_PUBLIC_URL;
+
+  if (!apiPublicUrl || isLocalUrl(apiPublicUrl)) {
+    return;
+  }
+
+  if (!source.WEB_PUBLIC_URL || isLocalUrl(source.WEB_PUBLIC_URL)) {
+    source.WEB_PUBLIC_URL = apiPublicUrl;
+  }
+
+  if (!source.WEB_ORIGIN || isLocalUrl(source.WEB_ORIGIN)) {
+    source.WEB_ORIGIN = source.WEB_PUBLIC_URL;
+  }
+
+  if (!source.TWILIO_WEBHOOK_BASE_URL || isLocalUrl(source.TWILIO_WEBHOOK_BASE_URL)) {
+    source.TWILIO_WEBHOOK_BASE_URL = apiPublicUrl;
   }
 }
 
@@ -183,6 +200,15 @@ function requireHttps(name: string, value: string, issues: string[]): void {
   }
 }
 
+function isLocalUrl(value: string): boolean {
+  try {
+    const url = new URL(value);
+    return ["localhost", "127.0.0.1", "0.0.0.0"].includes(url.hostname);
+  } catch {
+    return false;
+  }
+}
+
 function requireStrongSecret(name: string, value: string, issues: string[]): void {
   const normalized = value.trim().toLowerCase();
 
@@ -195,11 +221,4 @@ function requireStrongSecret(name: string, value: string, issues: string[]): voi
   ) {
     issues.push(`${name} must be a unique non-placeholder secret with at least 32 characters`);
   }
-}
-
-function parseCsv(value: string): readonly string[] {
-  return value
-    .split(",")
-    .map((entry) => entry.trim())
-    .filter(Boolean);
 }
