@@ -1,7 +1,6 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-
-const internalApiUrl = process.env.INTERNAL_API_URL ?? "http://localhost:4000";
+import { internalApiUrl } from "./api-url";
 
 export interface SessionUser {
   readonly id: string;

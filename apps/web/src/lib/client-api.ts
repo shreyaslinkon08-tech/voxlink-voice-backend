@@ -1,4 +1,6 @@
-export const publicApiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
+import { publicApiUrl } from "./api-url";
+
+export { publicApiUrl };
 
 interface ApiErrorPayload {
   readonly error?: {
