@@ -1,8 +1,12 @@
-FROM node:24-alpine AS api
+FROM node:22-bookworm-slim AS api
 
 WORKDIR /app
 
 ENV NEXT_TELEMETRY_DISABLED=1
+
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends ca-certificates openssl python3 make g++ \
+  && rm -rf /var/lib/apt/lists/*
 
 COPY package.json package-lock.json turbo.json tsconfig.base.json .npmrc ./
 COPY apps/api/package.json apps/api/package.json
@@ -15,8 +19,9 @@ COPY services/telephony/package.json services/telephony/package.json
 COPY services/rag/package.json services/rag/package.json
 
 RUN NODE_ENV=development npm ci --include=dev
-# The lockfile is generated on Windows, so install Alpine native CSS build packages explicitly.
-RUN NODE_ENV=development npm install --no-save --no-package-lock @tailwindcss/oxide-linux-x64-musl@4.3.0 lightningcss-linux-x64-musl@1.32.0
+# The lockfile is generated on Windows, so install Linux native CSS build packages explicitly.
+RUN NODE_ENV=development npm install --no-save --no-package-lock @tailwindcss/oxide-linux-x64-gnu@4.3.0 lightningcss-linux-x64-gnu@1.32.0
+RUN node -e "import('argon2').then(async (argon2) => { await argon2.hash('railway-build-check'); console.log('argon2 ok'); })"
 
 COPY apps/api apps/api
 COPY apps/web apps/web
