@@ -15,7 +15,15 @@ export function createSmtpEmailSender(config: AppConfig): EmailSender {
   const transporter = nodemailer.createTransport({
     host: config.MAIL_HOST,
     port: config.MAIL_PORT,
-    secure: false
+    secure: config.MAIL_SECURE,
+    ...(config.MAIL_USER && config.MAIL_PASSWORD
+      ? {
+          auth: {
+            user: config.MAIL_USER,
+            pass: config.MAIL_PASSWORD
+          }
+        }
+      : {})
   });
 
   return {
