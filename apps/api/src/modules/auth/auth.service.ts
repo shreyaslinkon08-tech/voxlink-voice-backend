@@ -60,9 +60,12 @@ function getClientUserAgent(request: FastifyRequest): string | undefined {
   return Array.isArray(value) ? value.join(", ") : value;
 }
 
-async function buildUniqueCompanySlug(app: FastifyInstance, companyName: string): Promise<string> {
+async function buildUniqueCompanySlug(
+  client: Pick<Prisma.TransactionClient, "company">,
+  companyName: string
+): Promise<string> {
   const baseSlug = slugify(companyName);
-  const existing = await app.prisma.company.findUnique({
+  const existing = await client.company.findUnique({
     where: { slug: baseSlug },
     select: { id: true }
   });
@@ -327,7 +330,7 @@ export async function completeGoogleOAuthSignIn(
     }
 
     if (state.mode === "signup" && state.companyName) {
-      const companySlug = await buildUniqueCompanySlug(app, state.companyName);
+      const companySlug = await buildUniqueCompanySlug(tx, state.companyName);
       const company = await tx.company.create({
         data: {
           name: state.companyName,
@@ -690,7 +693,7 @@ export async function signup(
         throw AppError.badRequest("Company name is required");
       }
 
-      const companySlug = await buildUniqueCompanySlug(app, input.companyName);
+      const companySlug = await buildUniqueCompanySlug(tx, input.companyName);
       const company = await tx.company.create({
         data: {
           name: input.companyName,
