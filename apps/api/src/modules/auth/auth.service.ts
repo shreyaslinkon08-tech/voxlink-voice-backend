@@ -148,11 +148,33 @@ async function withTimeout<T>(
   }
 }
 
-function googleOAuthRedirectUrl(app: FastifyInstance): string {
+function googleOAuthRedirectUrl(app: FastifyInstance, request?: FastifyRequest): string {
+  const webOrigin = getForwardedWebOrigin(request);
+
+  if (webOrigin) {
+    return new URL("/api/auth/google/callback", webOrigin).toString();
+  }
+
   return (
     app.config.GOOGLE_OAUTH_REDIRECT_URL ||
     new URL("/auth/google/callback", app.config.API_PUBLIC_URL).toString()
   );
+}
+
+function getForwardedWebOrigin(request: FastifyRequest | undefined): string | undefined {
+  const value = request?.headers["x-voxlink-web-origin"];
+  const origin = Array.isArray(value) ? value[0] : value;
+
+  if (!origin) {
+    return undefined;
+  }
+
+  try {
+    const url = new URL(origin);
+    return url.protocol === "https:" || url.hostname === "localhost" ? url.origin : undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 function assertGoogleOAuthConfigured(app: FastifyInstance): void {
@@ -192,7 +214,8 @@ function decodeGoogleOAuthState(value: string): GoogleOAuthState {
 
 export function createGoogleOAuthAuthorization(
   app: FastifyInstance,
-  input: GoogleOAuthStartQuery
+  input: GoogleOAuthStartQuery,
+  request?: FastifyRequest
 ): { readonly authorizationUrl: string; readonly stateCookieValue: string } {
   assertGoogleOAuthConfigured(app);
 
@@ -208,7 +231,7 @@ export function createGoogleOAuthAuthorization(
     next: input.next,
     createdAt: Date.now()
   };
-  const redirectUri = googleOAuthRedirectUrl(app);
+  const redirectUri = googleOAuthRedirectUrl(app, request);
   const authorizationUrl = new URL("https://accounts.google.com/o/oauth2/v2/auth");
 
   authorizationUrl.searchParams.set("client_id", app.config.GOOGLE_OAUTH_CLIENT_ID);
@@ -247,7 +270,7 @@ export async function completeGoogleOAuthSignIn(
     throw AppError.badRequest("Google sign-in state mismatch");
   }
 
-  const googleUser = await fetchGoogleUserInfo(app, query.code);
+  const googleUser = await fetchGoogleUserInfo(app, request, query.code);
 
   if (!googleUser.email_verified) {
     throw AppError.forbidden("Google account email must be verified");
@@ -462,8 +485,12 @@ export async function completeGoogleOAuthSignIn(
   };
 }
 
-async function fetchGoogleUserInfo(app: FastifyInstance, code: string): Promise<GoogleUserInfo> {
-  const redirectUri = googleOAuthRedirectUrl(app);
+async function fetchGoogleUserInfo(
+  app: FastifyInstance,
+  request: FastifyRequest,
+  code: string
+): Promise<GoogleUserInfo> {
+  const redirectUri = googleOAuthRedirectUrl(app, request);
   const tokenResponse = await fetch(googleTokenEndpoint, {
     method: "POST",
     headers: {

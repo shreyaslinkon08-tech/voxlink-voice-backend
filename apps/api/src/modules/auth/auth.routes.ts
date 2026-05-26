@@ -43,7 +43,11 @@ export const authRoutes: FastifyPluginCallback = (app, _options, done) => {
         query.mode === "signup"
           ? "/signup?error=google_sign_in_failed"
           : "/login?error=google_sign_in_failed";
-      const { authorizationUrl, stateCookieValue } = createGoogleOAuthAuthorization(app, query);
+      const { authorizationUrl, stateCookieValue } = createGoogleOAuthAuthorization(
+        app,
+        query,
+        request
+      );
 
       setGoogleOAuthStateCookie(reply, app.config, stateCookieValue);
       return reply.redirect(authorizationUrl);

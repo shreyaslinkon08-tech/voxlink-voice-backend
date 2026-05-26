@@ -48,6 +48,7 @@ async function proxyApiRequest(request: Request, context: ProxyRouteContext): Pr
   const requestHeaders = new Headers(request.headers);
   requestHeaders.delete("host");
   requestHeaders.delete("content-length");
+  requestHeaders.set("x-voxlink-web-origin", incomingUrl.origin);
 
   const init: RequestInit & { duplex?: "half" } = {
     method: request.method,
