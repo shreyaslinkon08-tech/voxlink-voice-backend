@@ -102,6 +102,7 @@ export interface PhoneNumberListResponse {
     readonly label: string | null;
     readonly provider: string;
     readonly providerNumberSid: string | null;
+    readonly providerMetadata: unknown;
     readonly status: string;
     readonly createdAt: string;
     readonly updatedAt: string;

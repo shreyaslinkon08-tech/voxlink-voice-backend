@@ -2,6 +2,7 @@ import { z } from "zod";
 import { paginationQuerySchema } from "../../utils/pagination.js";
 
 export const phoneNumberStatusSchema = z.enum(["active", "inactive", "released"]);
+export const telephonyProviderSchema = z.enum(["plivo", "twilio"]);
 
 export const createPhoneNumberSchema = z.object({
   e164: z
@@ -9,12 +10,14 @@ export const createPhoneNumberSchema = z.object({
     .trim()
     .regex(/^\+[1-9]\d{1,14}$/),
   label: z.string().trim().max(120).optional(),
+  provider: telephonyProviderSchema.optional(),
   aiAgentId: z.string().uuid().optional(),
-  providerNumberSid: z.string().trim().min(1).max(80).optional(),
+  providerNumberSid: z.string().trim().min(1).max(160).optional(),
   status: phoneNumberStatusSchema.default("active")
 });
 
 export const searchAvailablePhoneNumbersQuerySchema = z.object({
+  provider: telephonyProviderSchema.optional(),
   countryCode: z
     .string()
     .trim()
@@ -35,6 +38,7 @@ export const searchAvailablePhoneNumbersQuerySchema = z.object({
 });
 
 export const provisionPhoneNumberSchema = z.object({
+  provider: telephonyProviderSchema.optional(),
   e164: z
     .string()
     .trim()

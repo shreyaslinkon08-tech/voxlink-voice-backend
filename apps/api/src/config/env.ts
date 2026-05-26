@@ -57,11 +57,17 @@ const envSchema = z.object({
   STRIPE_PRICE_ID_SCALE: z.string().default(""),
   RATE_LIMIT_MAX: z.coerce.number().int().positive().default(120),
   RATE_LIMIT_WINDOW: z.string().min(1).default("1 minute"),
+  TELEPHONY_DEFAULT_PROVIDER: z.enum(["plivo", "twilio"]).default("plivo"),
   TWILIO_ACCOUNT_SID: z.string().default(""),
   TWILIO_AUTH_TOKEN: z.string().default(""),
   TWILIO_API_BASE_URL: z.string().url().default("https://api.twilio.com"),
   TWILIO_PROVIDER_TIMEOUT_MS: z.coerce.number().int().positive().default(10_000),
   TWILIO_WEBHOOK_BASE_URL: z.string().url().default("http://localhost:4000"),
+  PLIVO_AUTH_ID: z.string().default(""),
+  PLIVO_AUTH_TOKEN: z.string().default(""),
+  PLIVO_API_BASE_URL: z.string().url().default("https://api.plivo.com"),
+  PLIVO_PROVIDER_TIMEOUT_MS: z.coerce.number().int().positive().default(10_000),
+  PLIVO_WEBHOOK_BASE_URL: z.string().url().default("http://localhost:4000"),
   GROQ_API_KEYS: z.string().default(""),
   GROQ_BASE_URL: z.string().url().default("https://api.groq.com/openai/v1"),
   GROQ_PROVIDER_TIMEOUT_MS: z.coerce.number().int().positive().default(20_000),
@@ -113,6 +119,8 @@ function assertProductionSafeConfig(config: AppConfig): void {
   requireHttps("WEB_ORIGIN", config.WEB_ORIGIN, issues);
   requireHttps("TWILIO_API_BASE_URL", config.TWILIO_API_BASE_URL, issues);
   requireHttps("TWILIO_WEBHOOK_BASE_URL", config.TWILIO_WEBHOOK_BASE_URL, issues);
+  requireHttps("PLIVO_API_BASE_URL", config.PLIVO_API_BASE_URL, issues);
+  requireHttps("PLIVO_WEBHOOK_BASE_URL", config.PLIVO_WEBHOOK_BASE_URL, issues);
   requireHttps("GROQ_BASE_URL", config.GROQ_BASE_URL, issues);
   requireHttps("STRIPE_API_BASE_URL", config.STRIPE_API_BASE_URL, issues);
 
@@ -154,6 +162,10 @@ function normalizeProductionUrls(source: NodeJS.ProcessEnv): void {
 
   if (!source.TWILIO_WEBHOOK_BASE_URL || isLocalUrl(source.TWILIO_WEBHOOK_BASE_URL)) {
     source.TWILIO_WEBHOOK_BASE_URL = apiPublicUrl;
+  }
+
+  if (!source.PLIVO_WEBHOOK_BASE_URL || isLocalUrl(source.PLIVO_WEBHOOK_BASE_URL)) {
+    source.PLIVO_WEBHOOK_BASE_URL = apiPublicUrl;
   }
 }
 

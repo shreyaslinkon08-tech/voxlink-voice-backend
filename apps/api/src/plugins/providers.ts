@@ -1,7 +1,7 @@
 import fp from "fastify-plugin";
 import { GroqLlmProvider } from "@voxlink/llm";
 import { GroqSttProvider } from "@voxlink/stt";
-import { TwilioTelephonyProvider } from "@voxlink/telephony";
+import { PlivoTelephonyProvider, TwilioTelephonyProvider } from "@voxlink/telephony";
 import { GroqTtsProvider } from "@voxlink/tts";
 import type { LlmModelProfile } from "@voxlink/shared";
 import { ProviderRegistry } from "../providers/provider-registry.js";
@@ -9,9 +9,25 @@ import { ProviderRegistry } from "../providers/provider-registry.js";
 export const providersPlugin = fp((app, _options, done) => {
   const registry = new ProviderRegistry();
   const groqApiKeys = parseCsv(app.config.GROQ_API_KEYS);
+  const plivoConfigured = Boolean(
+    app.config.PLIVO_AUTH_ID.trim() && app.config.PLIVO_AUTH_TOKEN.trim()
+  );
   const twilioConfigured = Boolean(
     app.config.TWILIO_ACCOUNT_SID.trim() && app.config.TWILIO_AUTH_TOKEN.trim()
   );
+
+  if (!plivoConfigured) {
+    app.log.warn("Plivo provider was not registered because credentials are incomplete");
+  } else {
+    registry.register(
+      new PlivoTelephonyProvider({
+        authId: app.config.PLIVO_AUTH_ID,
+        authToken: app.config.PLIVO_AUTH_TOKEN,
+        apiBaseUrl: app.config.PLIVO_API_BASE_URL,
+        requestTimeoutMs: app.config.PLIVO_PROVIDER_TIMEOUT_MS
+      })
+    );
+  }
 
   if (!twilioConfigured) {
     app.log.warn("Twilio provider was not registered because credentials are incomplete");

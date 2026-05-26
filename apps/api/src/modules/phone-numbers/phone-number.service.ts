@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import type { Prisma } from "@prisma/client";
+import { WebhookProvider, type Prisma } from "@prisma/client";
 import type {
   TelephonyAvailablePhoneNumber,
   TelephonyProviderPort,
@@ -8,12 +8,15 @@ import type {
 import { AppError } from "../../errors/app-error.js";
 import { assertResourceWithinLimit } from "../billing/usage-limits.js";
 
+export type TelephonyProviderName = "plivo" | "twilio";
+
 export const phoneNumberSelect = {
   id: true,
   e164: true,
   label: true,
   provider: true,
   providerNumberSid: true,
+  providerMetadata: true,
   status: true,
   createdAt: true,
   updatedAt: true,
@@ -34,6 +37,7 @@ export const phoneNumberSelect = {
 export interface SearchAvailablePhoneNumbersInput {
   readonly companyId: string;
   readonly requestId: string;
+  readonly provider: TelephonyProviderName;
   readonly countryCode: string;
   readonly areaCode?: string;
   readonly contains?: string;
@@ -43,6 +47,7 @@ export interface SearchAvailablePhoneNumbersInput {
 export interface ProvisionPhoneNumberInput {
   readonly companyId: string;
   readonly requestId: string;
+  readonly provider: TelephonyProviderName;
   readonly e164: string;
   readonly label?: string;
   readonly aiAgentId?: string;
@@ -64,7 +69,7 @@ export async function searchAvailablePhoneNumbers(
   app: FastifyInstance,
   input: SearchAvailablePhoneNumbersInput
 ): Promise<readonly TelephonyAvailablePhoneNumber[]> {
-  const provider = requireTwilioProvider(app);
+  const provider = requireTelephonyProvider(app, input.provider);
 
   return provider.searchAvailablePhoneNumbers(
     {
@@ -79,7 +84,7 @@ export async function searchAvailablePhoneNumbers(
       companyId: input.companyId,
       timeoutPolicy: {
         connectTimeoutMs: 3_000,
-        requestTimeoutMs: app.config.TWILIO_PROVIDER_TIMEOUT_MS
+        requestTimeoutMs: providerTimeoutMs(app, input.provider)
       }
     }
   );
@@ -96,8 +101,11 @@ export async function provisionPhoneNumber(
   await assertPhoneNumberIsNotMapped(app, input.e164);
   await assertResourceWithinLimit(app.prisma, input.companyId, "phone_numbers", 1);
 
-  const provider = requireTwilioProvider(app);
-  const webhookUrls = buildTwilioWebhookUrls(app.config.TWILIO_WEBHOOK_BASE_URL);
+  const provider = requireTelephonyProvider(app, input.provider);
+  const webhookUrls = buildTelephonyWebhookUrls(
+    input.provider,
+    webhookBaseUrlForProvider(app, input.provider)
+  );
   const provisioned = await provider.provisionPhoneNumber(
     {
       e164: input.e164,
@@ -110,7 +118,7 @@ export async function provisionPhoneNumber(
       companyId: input.companyId,
       timeoutPolicy: {
         connectTimeoutMs: 3_000,
-        requestTimeoutMs: app.config.TWILIO_PROVIDER_TIMEOUT_MS
+        requestTimeoutMs: providerTimeoutMs(app, input.provider)
       }
     }
   );
@@ -125,8 +133,9 @@ export async function provisionPhoneNumber(
           e164: provisioned.e164,
           label: input.label ?? provisioned.friendlyName,
           aiAgentId: input.aiAgentId,
-          provider: "twilio",
+          provider: input.provider,
           providerNumberSid: provisioned.providerNumberSid,
+          providerMetadata: toInputJsonObject(provisioned.providerMetadata),
           status: "active"
         },
         select: phoneNumberSelect
@@ -146,7 +155,9 @@ export async function releasePhoneNumber(
     where: { id: input.phoneNumberId, companyId: input.companyId },
     select: {
       id: true,
+      provider: true,
       providerNumberSid: true,
+      providerMetadata: true,
       status: true
     }
   });
@@ -155,16 +166,23 @@ export async function releasePhoneNumber(
     throw AppError.notFound("Phone number not found");
   }
 
-  if (phoneNumber.status !== "released" && phoneNumber.providerNumberSid) {
-    const provider = requireTwilioProvider(app);
+  if (
+    phoneNumber.status !== "released" &&
+    isTelephonyProviderName(phoneNumber.provider) &&
+    phoneNumber.providerNumberSid
+  ) {
+    const provider = requireTelephonyProvider(app, phoneNumber.provider);
     await provider.releasePhoneNumber(
-      { providerNumberSid: phoneNumber.providerNumberSid },
+      {
+        providerNumberSid: phoneNumber.providerNumberSid,
+        providerMetadata: asRecord(phoneNumber.providerMetadata)
+      },
       {
         requestId: input.requestId,
         companyId: input.companyId,
         timeoutPolicy: {
           connectTimeoutMs: 3_000,
-          requestTimeoutMs: app.config.TWILIO_PROVIDER_TIMEOUT_MS
+          requestTimeoutMs: providerTimeoutMs(app, phoneNumber.provider)
         }
       }
     );
@@ -192,8 +210,11 @@ export async function syncPhoneNumberRouting(
     },
     select: {
       id: true,
+      e164: true,
+      provider: true,
       aiAgentId: true,
-      providerNumberSid: true
+      providerNumberSid: true,
+      providerMetadata: true
     }
   });
 
@@ -201,26 +222,38 @@ export async function syncPhoneNumberRouting(
     throw AppError.notFound("Phone number not found");
   }
 
-  if (!phoneNumber.providerNumberSid) {
-    throw AppError.badRequest("This phone number does not have a Twilio number SID to sync");
+  if (!isTelephonyProviderName(phoneNumber.provider)) {
+    throw AppError.badRequest("Phone number provider is not a voice telephony provider");
+  }
+
+  const providerNumberSid =
+    phoneNumber.providerNumberSid ??
+    (phoneNumber.provider === "plivo" ? normalizePlivoNumber(phoneNumber.e164) : undefined);
+
+  if (!providerNumberSid) {
+    throw AppError.badRequest("This phone number does not have a provider number ID to sync");
   }
 
   if (!phoneNumber.aiAgentId) {
-    throw AppError.badRequest("Assign an AI agent before syncing Twilio routing");
+    throw AppError.badRequest("Assign an AI agent before syncing phone routing");
   }
 
-  if (!isTwilioIncomingPhoneNumberSid(phoneNumber.providerNumberSid)) {
+  if (phoneNumber.provider === "twilio" && !isTwilioIncomingPhoneNumberSid(providerNumberSid)) {
     throw AppError.badRequest(
       "Enter a valid Twilio Incoming Phone Number SID before syncing routing"
     );
   }
 
-  const provider = requireTwilioProvider(app);
-  const webhookUrls = buildTwilioWebhookUrls(app.config.TWILIO_WEBHOOK_BASE_URL);
+  const provider = requireTelephonyProvider(app, phoneNumber.provider);
+  const webhookUrls = buildTelephonyWebhookUrls(
+    phoneNumber.provider,
+    webhookBaseUrlForProvider(app, phoneNumber.provider)
+  );
 
-  await provider.updatePhoneNumberRouting(
+  const updatedRouting = await provider.updatePhoneNumberRouting(
     {
-      providerNumberSid: phoneNumber.providerNumberSid,
+      providerNumberSid,
+      providerMetadata: asRecord(phoneNumber.providerMetadata),
       voiceWebhookUrl: webhookUrls.voiceWebhookUrl,
       statusCallbackUrl: webhookUrls.statusCallbackUrl
     },
@@ -229,14 +262,20 @@ export async function syncPhoneNumberRouting(
       companyId: input.companyId,
       timeoutPolicy: {
         connectTimeoutMs: 3_000,
-        requestTimeoutMs: app.config.TWILIO_PROVIDER_TIMEOUT_MS
+        requestTimeoutMs: providerTimeoutMs(app, phoneNumber.provider)
       }
     }
   );
 
   return app.prisma.phoneNumber.update({
     where: { id: phoneNumber.id },
-    data: { updatedAt: new Date() },
+    data: {
+      providerNumberSid: updatedRouting.providerNumberSid,
+      providerMetadata: updatedRouting.providerMetadata
+        ? toInputJsonObject(updatedRouting.providerMetadata)
+        : undefined,
+      updatedAt: new Date()
+    },
     select: phoneNumberSelect
   });
 }
@@ -245,9 +284,26 @@ export function buildTwilioWebhookUrls(baseUrl: string): {
   readonly voiceWebhookUrl: string;
   readonly statusCallbackUrl: string;
 } {
+  return buildTelephonyWebhookUrls("twilio", baseUrl);
+}
+
+export function buildPlivoWebhookUrls(baseUrl: string): {
+  readonly voiceWebhookUrl: string;
+  readonly statusCallbackUrl: string;
+} {
+  return buildTelephonyWebhookUrls("plivo", baseUrl);
+}
+
+function buildTelephonyWebhookUrls(
+  provider: TelephonyProviderName,
+  baseUrl: string
+): {
+  readonly voiceWebhookUrl: string;
+  readonly statusCallbackUrl: string;
+} {
   return {
-    voiceWebhookUrl: new URL("/webhooks/twilio/voice", baseUrl).toString(),
-    statusCallbackUrl: new URL("/webhooks/twilio/status", baseUrl).toString()
+    voiceWebhookUrl: new URL(`/webhooks/${provider}/voice`, baseUrl).toString(),
+    statusCallbackUrl: new URL(`/webhooks/${provider}/status`, baseUrl).toString()
   };
 }
 
@@ -256,17 +312,20 @@ async function compensateProvisionedNumber(
   provisioned: TelephonyProvisionNumberResponse,
   input: ProvisionPhoneNumberInput
 ): Promise<void> {
-  const provider = requireTwilioProvider(app);
+  const provider = requireTelephonyProvider(app, input.provider);
 
   try {
     await provider.releasePhoneNumber(
-      { providerNumberSid: provisioned.providerNumberSid },
+      {
+        providerNumberSid: provisioned.providerNumberSid,
+        providerMetadata: provisioned.providerMetadata
+      },
       {
         requestId: input.requestId,
         companyId: input.companyId,
         timeoutPolicy: {
           connectTimeoutMs: 3_000,
-          requestTimeoutMs: app.config.TWILIO_PROVIDER_TIMEOUT_MS
+          requestTimeoutMs: providerTimeoutMs(app, input.provider)
         }
       }
     );
@@ -278,19 +337,37 @@ async function compensateProvisionedNumber(
         e164: provisioned.e164,
         providerNumberSid: provisioned.providerNumberSid
       },
-      "Failed to release Twilio number after database provisioning failed"
+      "Failed to release provider number after database provisioning failed"
     );
   }
 }
 
-function requireTwilioProvider(app: FastifyInstance): TelephonyProviderPort {
-  const provider = app.providers.get<TelephonyProviderPort>("telephony", "twilio");
+function requireTelephonyProvider(
+  app: FastifyInstance,
+  providerName: TelephonyProviderName
+): TelephonyProviderPort {
+  const provider = app.providers.get<TelephonyProviderPort>("telephony", providerName);
 
   if (!provider) {
-    throw AppError.badRequest("Twilio provider is not configured");
+    throw AppError.badRequest(`${providerName} provider is not configured`);
   }
 
   return provider;
+}
+
+function webhookBaseUrlForProvider(
+  app: FastifyInstance,
+  providerName: TelephonyProviderName
+): string {
+  return providerName === "plivo"
+    ? app.config.PLIVO_WEBHOOK_BASE_URL
+    : app.config.TWILIO_WEBHOOK_BASE_URL;
+}
+
+function providerTimeoutMs(app: FastifyInstance, providerName: TelephonyProviderName): number {
+  return providerName === "plivo"
+    ? app.config.PLIVO_PROVIDER_TIMEOUT_MS
+    : app.config.TWILIO_PROVIDER_TIMEOUT_MS;
 }
 
 async function assertAgentBelongsToTenant(
@@ -321,4 +398,20 @@ async function assertPhoneNumberIsNotMapped(app: FastifyInstance, e164: string):
 
 function isTwilioIncomingPhoneNumberSid(value: string): boolean {
   return /^PN[0-9a-fA-F]{32}$/.test(value.trim());
+}
+
+function isTelephonyProviderName(value: WebhookProvider): value is TelephonyProviderName {
+  return value === WebhookProvider.plivo || value === WebhookProvider.twilio;
+}
+
+function asRecord(value: Prisma.JsonValue): Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value) ? value : {};
+}
+
+function toInputJsonObject(value: Record<string, unknown> | undefined): Prisma.InputJsonObject {
+  return (value ?? {}) as Prisma.InputJsonObject;
+}
+
+function normalizePlivoNumber(value: string): string {
+  return value.replace(/[^\d]/g, "");
 }

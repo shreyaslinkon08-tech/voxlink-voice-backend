@@ -39,7 +39,7 @@ export function PhoneNumberActions({
   }
 
   async function releaseNumber() {
-    if (!window.confirm(`Release ${e164} from Twilio and disable inbound routing?`)) {
+    if (!window.confirm(`Release ${e164} from the provider and disable inbound routing?`)) {
       return;
     }
 
@@ -50,7 +50,9 @@ export function PhoneNumberActions({
       await clientApi(`/phone-numbers/${phoneNumberId}/release`, { method: "POST" });
       router.refresh();
     } catch (releaseError) {
-      setError(releaseError instanceof Error ? releaseError.message : "Phone number release failed");
+      setError(
+        releaseError instanceof Error ? releaseError.message : "Phone number release failed"
+      );
     } finally {
       setPendingAction(null);
     }
@@ -67,7 +69,7 @@ export function PhoneNumberActions({
             void syncRouting();
           }}
           disabled={!canSyncRouting || pendingAction !== null}
-          title={syncDisabledReason ?? "Sync Twilio webhook URLs"}
+          title={syncDisabledReason ?? "Sync provider webhook URLs"}
         >
           <RefreshCcw className="h-3.5 w-3.5" aria-hidden="true" />
           {pendingAction === "sync" ? "Syncing" : "Sync routing"}

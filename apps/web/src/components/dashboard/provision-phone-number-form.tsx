@@ -42,6 +42,7 @@ export function ProvisionPhoneNumberForm({ agents }: ProvisionPhoneNumberFormPro
   const [isSearching, setIsSearching] = useState(false);
   const [provisioningE164, setProvisioningE164] = useState<string | null>(null);
   const [selectedAgentId, setSelectedAgentId] = useState("");
+  const [selectedProvider, setSelectedProvider] = useState("plivo");
 
   async function onSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -50,7 +51,10 @@ export function ProvisionPhoneNumberForm({ agents }: ProvisionPhoneNumberFormPro
 
     const form = new FormData(event.currentTarget);
     const searchParams = new URLSearchParams();
-    searchParams.set("countryCode", formValueAsString(form.get("countryCode")) || "US");
+    const provider = formValueAsString(form.get("provider")) || "plivo";
+    setSelectedProvider(provider);
+    searchParams.set("provider", provider);
+    searchParams.set("countryCode", formValueAsString(form.get("countryCode")) || "IN");
     searchParams.set("limit", formValueAsString(form.get("limit")) || "10");
     appendOptional(searchParams, "areaCode", form.get("areaCode"));
     appendOptional(searchParams, "contains", form.get("contains"));
@@ -78,7 +82,8 @@ export function ProvisionPhoneNumberForm({ agents }: ProvisionPhoneNumberFormPro
         method: "POST",
         body: JSON.stringify({
           e164: number.e164,
-          label: number.friendlyName ?? "Twilio voice number",
+          provider: selectedProvider,
+          label: number.friendlyName ?? `${providerLabel(selectedProvider)} voice number`,
           aiAgentId: selectedAgentId || undefined
         })
       });
@@ -86,7 +91,9 @@ export function ProvisionPhoneNumberForm({ agents }: ProvisionPhoneNumberFormPro
       router.refresh();
     } catch (provisionError) {
       setError(
-        provisionError instanceof Error ? provisionError.message : "Phone number provisioning failed"
+        provisionError instanceof Error
+          ? provisionError.message
+          : "Phone number provisioning failed"
       );
     } finally {
       setProvisioningE164(null);
@@ -97,16 +104,25 @@ export function ProvisionPhoneNumberForm({ agents }: ProvisionPhoneNumberFormPro
     <Card>
       <CardHeader className="flex-row items-center gap-3">
         <PhoneForwarded className="h-5 w-5 text-[var(--muted-foreground)]" aria-hidden="true" />
-        <CardTitle>Buy Twilio Number</CardTitle>
+        <CardTitle>Buy Voice Number</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <form
-          className="grid gap-3 lg:grid-cols-[0.65fr_0.8fr_1fr_0.7fr_1.2fr_auto]"
+          className="grid gap-3 lg:grid-cols-[0.8fr_0.65fr_0.8fr_1fr_0.7fr_1.2fr_auto]"
           onSubmit={(event) => {
             void onSearch(event);
           }}
         >
-          <Input name="countryCode" placeholder="US" defaultValue="US" maxLength={2} required />
+          <select
+            name="provider"
+            className="h-9 rounded-md border border-[var(--border)] bg-transparent px-3 text-sm"
+            value={selectedProvider}
+            onChange={(event) => setSelectedProvider(event.target.value)}
+          >
+            <option value="plivo">Plivo India</option>
+            <option value="twilio">Twilio</option>
+          </select>
+          <Input name="countryCode" placeholder="IN" defaultValue="IN" maxLength={2} required />
           <Input name="areaCode" placeholder="Area code" inputMode="numeric" />
           <Input name="contains" placeholder="Contains digits" />
           <Input name="limit" placeholder="10" defaultValue="10" inputMode="numeric" />
@@ -144,7 +160,7 @@ export function ProvisionPhoneNumberForm({ agents }: ProvisionPhoneNumberFormPro
                 <div>
                   <p className="font-semibold">{number.e164}</p>
                   <p className="text-xs text-[var(--muted-foreground)]">
-                    {number.friendlyName ?? "Twilio available number"}
+                    {number.friendlyName ?? "Available voice number"}
                   </p>
                 </div>
                 <p className="text-[var(--muted-foreground)]">
@@ -192,4 +208,8 @@ function appendOptional(
 
 function formValueAsString(value: FormDataEntryValue | null): string {
   return typeof value === "string" ? value.trim() : "";
+}
+
+function providerLabel(provider: string): string {
+  return provider === "twilio" ? "Twilio" : "Plivo";
 }

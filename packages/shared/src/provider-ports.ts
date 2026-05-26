@@ -128,12 +128,19 @@ export interface TelephonyProvisionNumberResponse {
 
 export interface TelephonyUpdateNumberRoutingRequest {
   readonly providerNumberSid: string;
+  readonly providerMetadata?: Record<string, unknown>;
   readonly voiceWebhookUrl: string;
   readonly statusCallbackUrl: string;
 }
 
+export interface TelephonyUpdateNumberRoutingResponse {
+  readonly providerNumberSid?: string;
+  readonly providerMetadata?: Record<string, unknown>;
+}
+
 export interface TelephonyReleaseNumberRequest {
   readonly providerNumberSid: string;
+  readonly providerMetadata?: Record<string, unknown>;
 }
 
 export interface TelephonyProviderPort extends ProviderPort {
@@ -151,7 +158,7 @@ export interface TelephonyProviderPort extends ProviderPort {
   updatePhoneNumberRouting(
     request: TelephonyUpdateNumberRoutingRequest,
     context: ProviderExecutionContext
-  ): Promise<void>;
+  ): Promise<TelephonyUpdateNumberRoutingResponse>;
   releasePhoneNumber(
     request: TelephonyReleaseNumberRequest,
     context: ProviderExecutionContext

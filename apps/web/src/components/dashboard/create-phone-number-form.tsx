@@ -30,6 +30,7 @@ export function CreatePhoneNumberForm({ agents }: CreatePhoneNumberFormProps) {
 
     const form = new FormData(event.currentTarget);
     const aiAgentId = formValueAsString(form.get("aiAgentId"));
+    const provider = formValueAsString(form.get("provider")) || "plivo";
 
     try {
       await clientApi("/phone-numbers", {
@@ -37,6 +38,7 @@ export function CreatePhoneNumberForm({ agents }: CreatePhoneNumberFormProps) {
         body: JSON.stringify({
           e164: form.get("e164"),
           label: form.get("label") || undefined,
+          provider,
           aiAgentId: aiAgentId || undefined,
           providerNumberSid: form.get("providerNumberSid") || undefined,
           status: "active"
@@ -59,18 +61,26 @@ export function CreatePhoneNumberForm({ agents }: CreatePhoneNumberFormProps) {
     <Card>
       <CardHeader className="flex-row items-center gap-3">
         <Phone className="h-5 w-5 text-[var(--muted-foreground)]" aria-hidden="true" />
-        <CardTitle>Link Existing Twilio Number</CardTitle>
+        <CardTitle>Link Existing Voice Number</CardTitle>
       </CardHeader>
       <CardContent>
         <form
-          className="grid gap-3 lg:grid-cols-[1fr_1fr_1fr_auto]"
+          className="grid gap-3 lg:grid-cols-[0.75fr_1fr_1fr_1fr_1fr_auto]"
           onSubmit={(event) => {
             void onSubmit(event);
           }}
         >
+          <select
+            name="provider"
+            className="h-9 rounded-md border border-[var(--border)] bg-transparent px-3 text-sm"
+            defaultValue="plivo"
+          >
+            <option value="plivo">Plivo India</option>
+            <option value="twilio">Twilio</option>
+          </select>
           <Input name="e164" placeholder="+15551234567" required />
           <Input name="label" placeholder="Main line" />
-          <Input name="providerNumberSid" placeholder="Twilio number SID" />
+          <Input name="providerNumberSid" placeholder="Provider number ID" />
           <select
             name="aiAgentId"
             className="h-9 rounded-md border border-[var(--border)] bg-transparent px-3 text-sm"
@@ -88,7 +98,7 @@ export function CreatePhoneNumberForm({ agents }: CreatePhoneNumberFormProps) {
               {isSubmitting ? "Assigning" : "Assign"}
             </Button>
           </div>
-          {error ? <p className="text-sm text-red-600 lg:col-span-4">{error}</p> : null}
+          {error ? <p className="text-sm text-red-600 lg:col-span-6">{error}</p> : null}
         </form>
       </CardContent>
     </Card>

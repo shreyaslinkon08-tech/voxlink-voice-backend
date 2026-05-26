@@ -25,6 +25,7 @@ export interface HandleTwilioStartInput {
   readonly event: TwilioMediaStartEvent;
   readonly callId: string;
   readonly requestId: string;
+  readonly provider?: "plivo" | "twilio";
 }
 
 export interface HandleTwilioMediaInput {
@@ -70,7 +71,7 @@ export class VoicePipelineService {
     return this.options.sessions.startSession({
       callId: call.id,
       companyId: call.companyId,
-      provider: "twilio",
+      provider: input.provider ?? "twilio",
       providerCallId: call.providerCallId,
       streamSid: input.event.start.streamSid,
       accountSid: input.event.start.accountSid,

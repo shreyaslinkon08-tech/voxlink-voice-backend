@@ -1,6 +1,12 @@
 export type { TelephonyInboundCall, TelephonyProviderPort } from "@voxlink/shared";
 
 export {
+  PlivoTelephonyProvider,
+  createPlivoSignatureV3,
+  type PlivoTelephonyProviderConfig
+} from "./plivo-telephony-provider.js";
+
+export {
   TwilioTelephonyProvider,
   createTwilioSignature,
   executionContextForWebhook,

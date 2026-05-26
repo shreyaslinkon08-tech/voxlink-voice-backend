@@ -102,6 +102,7 @@ enum UsageMetric {
 
 enum WebhookProvider {
   twilio @map("twilio")
+  plivo  @map("plivo")
   stripe @map("stripe")
 
   @@map("webhook_provider")
@@ -221,6 +222,7 @@ model PhoneNumber {
   label             String?
   provider          WebhookProvider   @default(twilio)
   providerNumberSid String?           @unique @map("provider_number_sid")
+  providerMetadata  Json              @default("{}") @map("provider_metadata")
   status            PhoneNumberStatus @default(active)
   createdAt         DateTime          @default(now()) @map("created_at")
   updatedAt         DateTime          @updatedAt @map("updated_at")

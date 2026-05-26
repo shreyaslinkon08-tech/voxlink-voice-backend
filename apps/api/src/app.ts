@@ -26,6 +26,7 @@ import { dashboardRoutes } from "./modules/dashboard/dashboard.routes.js";
 import { knowledgeBaseRoutes } from "./modules/knowledge-base/knowledge-base.routes.js";
 import { phoneNumberRoutes } from "./modules/phone-numbers/phone-number.routes.js";
 import { providerRoutes } from "./modules/providers/provider.routes.js";
+import { plivoWebhookRoutes } from "./modules/webhooks/plivo.routes.js";
 import { stripeWebhookRoutes } from "./modules/webhooks/stripe.routes.js";
 import { twilioWebhookRoutes } from "./modules/webhooks/twilio.routes.js";
 
@@ -41,10 +42,14 @@ export async function buildApp(config: AppConfig): Promise<FastifyInstance> {
           "req.headers.cookie",
           "req.headers['x-twilio-signature']",
           "req.headers['i-twilio-idempotency-token']",
+          "req.headers['x-plivo-signature-v3']",
+          "req.headers['x-plivo-signature-v3-nonce']",
           "req.headers['stripe-signature']",
           "headers.authorization",
           "headers.cookie",
           "headers['x-twilio-signature']",
+          "headers['x-plivo-signature-v3']",
+          "headers['x-plivo-signature-v3-nonce']",
           "headers['stripe-signature']",
           "body.password",
           "body.newPassword",
@@ -123,6 +128,7 @@ export async function buildApp(config: AppConfig): Promise<FastifyInstance> {
   await app.register(knowledgeBaseRoutes, { prefix: "/knowledge-base" });
   await app.register(phoneNumberRoutes, { prefix: "/phone-numbers" });
   await app.register(providerRoutes, { prefix: "/providers" });
+  await app.register(plivoWebhookRoutes, { prefix: "/webhooks/plivo" });
   await app.register(stripeWebhookRoutes, { prefix: "/webhooks/stripe" });
   await app.register(twilioWebhookRoutes, { prefix: "/webhooks/twilio" });
 

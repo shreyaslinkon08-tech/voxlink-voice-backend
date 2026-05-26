@@ -5,7 +5,7 @@ export type VoiceSessionStatus = "starting" | "connected" | "streaming" | "ended
 export interface StartVoiceSessionInput {
   readonly callId: string;
   readonly companyId: string;
-  readonly provider: "twilio";
+  readonly provider: "plivo" | "twilio";
   readonly providerCallId: string;
   readonly streamSid: string;
   readonly accountSid?: string;
@@ -29,7 +29,7 @@ export type VoiceAudioFrame = AppendAudioFrameInput;
 export interface VoiceSessionSnapshot {
   readonly callId: string;
   readonly companyId: string;
-  readonly provider: "twilio";
+  readonly provider: "plivo" | "twilio";
   readonly providerCallId: string;
   readonly streamSid: string;
   readonly status: VoiceSessionStatus;
@@ -271,7 +271,7 @@ export class RedisVoiceSessionStore {
     return {
       callId: data.callId,
       companyId: data.companyId,
-      provider: "twilio",
+      provider: data.provider === "plivo" ? "plivo" : "twilio",
       providerCallId: data.providerCallId,
       streamSid: data.streamSid,
       status: parseVoiceSessionStatus(data.status),

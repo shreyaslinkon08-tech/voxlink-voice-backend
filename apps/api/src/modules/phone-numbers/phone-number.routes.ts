@@ -55,6 +55,7 @@ export const phoneNumberRoutes: FastifyPluginCallback = (app, _options, done) =>
       const phoneNumbers = await searchAvailablePhoneNumbers(app, {
         companyId: tenant.companyId,
         requestId: request.id,
+        provider: input.provider ?? app.config.TELEPHONY_DEFAULT_PROVIDER,
         countryCode: input.countryCode,
         areaCode: input.areaCode,
         contains: input.contains,
@@ -79,14 +80,22 @@ export const phoneNumberRoutes: FastifyPluginCallback = (app, _options, done) =>
 
       const phoneNumber = await app.prisma.$transaction(async (tx) => {
         await assertResourceWithinLimit(tx, tenant.companyId, "phone_numbers", 1);
+        const provider = input.provider ?? app.config.TELEPHONY_DEFAULT_PROVIDER;
 
         return tx.phoneNumber.create({
           data: {
             companyId: tenant.companyId,
             e164: input.e164,
             label: input.label,
+            provider,
             aiAgentId: input.aiAgentId,
-            providerNumberSid: input.providerNumberSid,
+            providerNumberSid:
+              input.providerNumberSid ||
+              (provider === "plivo" ? plivoNumber(input.e164) : undefined),
+            providerMetadata:
+              provider === "plivo"
+                ? ({ plivoNumber: plivoNumber(input.e164) } satisfies Prisma.InputJsonObject)
+                : {},
             status: input.status
           },
           select: phoneNumberSelect
@@ -109,6 +118,7 @@ export const phoneNumberRoutes: FastifyPluginCallback = (app, _options, done) =>
       const phoneNumber = await provisionPhoneNumber(app, {
         companyId: tenant.companyId,
         requestId: request.id,
+        provider: input.provider ?? app.config.TELEPHONY_DEFAULT_PROVIDER,
         e164: input.e164,
         label: input.label,
         aiAgentId: input.aiAgentId
@@ -207,4 +217,8 @@ async function assertAgentBelongsToTenant(
   if (!agent) {
     throw AppError.badRequest("AI agent is not available for this company");
   }
+}
+
+function plivoNumber(e164: string): string {
+  return e164.replace(/[^\d]/g, "");
 }

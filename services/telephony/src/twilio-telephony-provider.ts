@@ -127,8 +127,9 @@ export class TwilioTelephonyProvider implements TelephonyProviderPort {
     );
 
     return (payload.available_phone_numbers ?? [])
-      .filter((number): number is TwilioAvailableNumberPayload & { readonly phone_number: string } =>
-        Boolean(number.phone_number)
+      .filter(
+        (number): number is TwilioAvailableNumberPayload & { readonly phone_number: string } =>
+          Boolean(number.phone_number)
       )
       .map((number) => ({
         e164: number.phone_number,
@@ -197,11 +198,12 @@ export class TwilioTelephonyProvider implements TelephonyProviderPort {
   async updatePhoneNumberRouting(
     request: {
       readonly providerNumberSid: string;
+      readonly providerMetadata?: Record<string, unknown>;
       readonly voiceWebhookUrl: string;
       readonly statusCallbackUrl: string;
     },
     context: ProviderExecutionContext
-  ): Promise<void> {
+  ): Promise<Record<string, never>> {
     const accountSid = this.requireAccountSid();
     const body = new URLSearchParams({
       VoiceUrl: request.voiceWebhookUrl,
@@ -223,10 +225,15 @@ export class TwilioTelephonyProvider implements TelephonyProviderPort {
       context,
       "update phone number routing"
     );
+
+    return {};
   }
 
   async releasePhoneNumber(
-    request: { readonly providerNumberSid: string },
+    request: {
+      readonly providerNumberSid: string;
+      readonly providerMetadata?: Record<string, unknown>;
+    },
     context: ProviderExecutionContext
   ): Promise<void> {
     const accountSid = this.requireAccountSid();
@@ -432,7 +439,9 @@ function safeEqualBase64(expected: string, actual: string): boolean {
   return timingSafeEqual(expectedBuffer, actualBuffer);
 }
 
-function capabilitiesFromTwilio(value: Record<string, unknown> | undefined): TelephonyNumberCapabilities {
+function capabilitiesFromTwilio(
+  value: Record<string, unknown> | undefined
+): TelephonyNumberCapabilities {
   const read = (lowerKey: string, upperKey: string): boolean =>
     Boolean(value?.[lowerKey] ?? value?.[upperKey]);
 

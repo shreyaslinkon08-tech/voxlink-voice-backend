@@ -79,7 +79,7 @@ export default async function PhoneNumbersPage() {
 function syncRoutingDisabledReason(
   number: Awaited<ReturnType<typeof getPhoneNumbers>>["phoneNumbers"][number]
 ): string | undefined {
-  if (!number.providerNumberSid) {
+  if (!number.providerNumberSid && number.provider !== "plivo") {
     return "Add the Twilio Incoming Phone Number SID before syncing routing.";
   }
 
