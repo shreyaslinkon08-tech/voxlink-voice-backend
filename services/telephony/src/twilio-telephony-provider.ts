@@ -332,12 +332,15 @@ export class TwilioTelephonyProvider implements TelephonyProviderPort {
     const body = await safeReadResponseText(response);
     const statusCode = response.status;
     const code = providerCodeFromHttpStatus(statusCode, body);
+    const twilioMessage = extractTwilioErrorMessage(body);
 
     return new ProviderRequestError({
       providerKind: this.providerKind,
       providerName: this.providerName,
       code,
-      message: `Twilio ${operationName} failed with HTTP ${statusCode}`,
+      message: twilioMessage
+        ? `Twilio ${operationName} failed: ${twilioMessage}`
+        : `Twilio ${operationName} failed with HTTP ${statusCode}`,
       retryable: isRetryableProviderCode(code),
       cause: { statusCode, body: redactProviderSecrets(body) }
     });
@@ -367,6 +370,31 @@ export class TwilioTelephonyProvider implements TelephonyProviderPort {
       retryable: true,
       cause: error
     });
+  }
+}
+
+function extractTwilioErrorMessage(body: string): string | undefined {
+  if (!body.trim()) {
+    return undefined;
+  }
+
+  try {
+    const parsed = JSON.parse(body) as {
+      readonly message?: unknown;
+      readonly code?: unknown;
+      readonly status?: unknown;
+    };
+    const message = typeof parsed.message === "string" ? parsed.message.trim() : "";
+    const code =
+      typeof parsed.code === "number" || typeof parsed.code === "string" ? String(parsed.code) : "";
+
+    if (message && code) {
+      return `${message} (Twilio code ${code})`;
+    }
+
+    return message || undefined;
+  } catch {
+    return body.replace(/\s+/g, " ").trim().slice(0, 240) || undefined;
   }
 }
 

@@ -138,6 +138,39 @@ describe("TwilioTelephonyProvider", () => {
       retryable: false
     });
   });
+
+  it("surfaces Twilio API error messages when routing sync fails", async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(
+      jsonResponse(
+        {
+          code: 20404,
+          message: "The requested resource was not found"
+        },
+        404
+      )
+    );
+    const provider = new TwilioTelephonyProvider({
+      accountSid: "AC123",
+      authToken: "auth-token",
+      fetchImpl
+    });
+
+    await expect(
+      provider.updatePhoneNumberRouting(
+        {
+          providerNumberSid: "PN00000000000000000000000000000000",
+          voiceWebhookUrl: "https://voice.example.com/webhooks/twilio/voice",
+          statusCallbackUrl: "https://voice.example.com/webhooks/twilio/status"
+        },
+        { requestId: "req-1", companyId: "company-1" }
+      )
+    ).rejects.toMatchObject({
+      code: "invalid_request",
+      message:
+        "Twilio update phone number routing failed: The requested resource was not found (Twilio code 20404)",
+      retryable: false
+    });
+  });
 });
 
 function jsonResponse(payload: unknown, status = 200): Response {

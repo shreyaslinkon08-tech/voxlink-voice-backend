@@ -1,6 +1,7 @@
-import { Link2, Phone } from "lucide-react";
+import { Phone } from "lucide-react";
 import { CreatePhoneNumberForm } from "@/components/dashboard/create-phone-number-form";
 import { EmptyPanel } from "@/components/dashboard/empty-panel";
+import { PhoneNumberAgentSelect } from "@/components/dashboard/phone-number-agent-select";
 import { PhoneNumberActions } from "@/components/dashboard/phone-number-actions";
 import { ProvisionPhoneNumberForm } from "@/components/dashboard/provision-phone-number-form";
 import { StatusBadge } from "@/components/dashboard/status-badge";
@@ -42,12 +43,13 @@ export default async function PhoneNumbersPage() {
                 <StatusBadge status={number.status} />
               </CardHeader>
               <CardContent className="grid gap-4 text-sm sm:grid-cols-3">
-                <div>
-                  <p className="text-xs text-[var(--muted-foreground)]">Agent</p>
-                  <p className="mt-1 flex items-center gap-1 font-medium">
-                    <Link2 className="h-3.5 w-3.5" aria-hidden="true" />
-                    {number.aiAgent?.name ?? "Unassigned"}
-                  </p>
+                <div className="sm:col-span-3 lg:col-span-1">
+                  <PhoneNumberAgentSelect
+                    phoneNumberId={number.id}
+                    currentAgentId={number.aiAgent?.id ?? null}
+                    agents={agents}
+                    isReleased={number.status === "released"}
+                  />
                 </div>
                 <div>
                   <p className="text-xs text-[var(--muted-foreground)]">Provider</p>
@@ -61,7 +63,7 @@ export default async function PhoneNumbersPage() {
                   <PhoneNumberActions
                     phoneNumberId={number.id}
                     e164={number.e164}
-                    canSyncRouting={Boolean(number.providerNumberSid)}
+                    syncDisabledReason={syncRoutingDisabledReason(number)}
                     isReleased={number.status === "released"}
                   />
                 </div>
@@ -72,4 +74,18 @@ export default async function PhoneNumbersPage() {
       )}
     </div>
   );
+}
+
+function syncRoutingDisabledReason(
+  number: Awaited<ReturnType<typeof getPhoneNumbers>>["phoneNumbers"][number]
+): string | undefined {
+  if (!number.providerNumberSid) {
+    return "Add the Twilio Incoming Phone Number SID before syncing routing.";
+  }
+
+  if (!number.aiAgent) {
+    return "Assign an AI agent before syncing routing.";
+  }
+
+  return undefined;
 }

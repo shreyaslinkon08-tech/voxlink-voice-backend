@@ -1,7 +1,17 @@
 import { ZodError } from "zod";
 import type { FastifyInstance } from "fastify";
-import { ProviderRequestError } from "@voxlink/shared";
+import { ProviderRequestError, providerErrorCodeValues } from "@voxlink/shared";
 import { AppError } from "../errors/app-error.js";
+
+interface ProviderRequestErrorShape {
+  readonly providerKind: string;
+  readonly providerName: string;
+  readonly code: ProviderRequestError["code"];
+  readonly retryable: boolean;
+  readonly message: string;
+}
+
+const providerErrorCodes = new Set<string>(providerErrorCodeValues);
 
 export function registerErrorHandler(app: FastifyInstance): void {
   app.setErrorHandler((error, request, reply) => {
@@ -28,14 +38,16 @@ export function registerErrorHandler(app: FastifyInstance): void {
       return;
     }
 
-    if (error instanceof ProviderRequestError) {
-      const statusCode = providerStatusCode(error.code);
+    const providerError = normalizeProviderRequestError(error);
+
+    if (providerError) {
+      const statusCode = providerStatusCode(providerError.code);
       request.log.warn(
         {
-          providerKind: error.providerKind,
-          providerName: error.providerName,
-          providerCode: error.code,
-          retryable: error.retryable,
+          providerKind: providerError.providerKind,
+          providerName: providerError.providerName,
+          providerCode: providerError.code,
+          retryable: providerError.retryable,
           statusCode
         },
         "Provider request failed"
@@ -43,7 +55,7 @@ export function registerErrorHandler(app: FastifyInstance): void {
       void reply.status(statusCode).send({
         error: {
           code: "PROVIDER_REQUEST_FAILED",
-          message: error.message,
+          message: providerError.message,
           requestId: request.id
         }
       });
@@ -59,6 +71,54 @@ export function registerErrorHandler(app: FastifyInstance): void {
       }
     });
   });
+}
+
+function normalizeProviderRequestError(error: unknown): ProviderRequestErrorShape | null {
+  if (error instanceof ProviderRequestError) {
+    return error;
+  }
+
+  if (
+    typeof error !== "object" ||
+    error === null ||
+    !("providerKind" in error) ||
+    !("providerName" in error) ||
+    !("code" in error) ||
+    !("retryable" in error) ||
+    !("message" in error)
+  ) {
+    return null;
+  }
+
+  const candidate = error as {
+    readonly providerKind?: unknown;
+    readonly providerName?: unknown;
+    readonly code?: unknown;
+    readonly retryable?: unknown;
+    readonly message?: unknown;
+  };
+
+  if (
+    typeof candidate.providerKind !== "string" ||
+    typeof candidate.providerName !== "string" ||
+    typeof candidate.retryable !== "boolean" ||
+    typeof candidate.message !== "string" ||
+    !isProviderErrorCode(candidate.code)
+  ) {
+    return null;
+  }
+
+  return {
+    providerKind: candidate.providerKind,
+    providerName: candidate.providerName,
+    code: candidate.code,
+    retryable: candidate.retryable,
+    message: candidate.message
+  };
+}
+
+function isProviderErrorCode(value: unknown): value is ProviderRequestError["code"] {
+  return typeof value === "string" && providerErrorCodes.has(value);
 }
 
 function providerStatusCode(code: ProviderRequestError["code"]): number {

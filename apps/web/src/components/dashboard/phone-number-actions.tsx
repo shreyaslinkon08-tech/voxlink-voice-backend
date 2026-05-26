@@ -9,19 +9,20 @@ import { clientApi } from "@/lib/client-api";
 interface PhoneNumberActionsProps {
   readonly phoneNumberId: string;
   readonly e164: string;
-  readonly canSyncRouting: boolean;
+  readonly syncDisabledReason?: string;
   readonly isReleased: boolean;
 }
 
 export function PhoneNumberActions({
   phoneNumberId,
   e164,
-  canSyncRouting,
+  syncDisabledReason,
   isReleased
 }: PhoneNumberActionsProps) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [pendingAction, setPendingAction] = useState<"sync" | "release" | null>(null);
+  const canSyncRouting = !syncDisabledReason && !isReleased;
 
   async function syncRouting() {
     setError(null);
@@ -65,8 +66,8 @@ export function PhoneNumberActions({
           onClick={() => {
             void syncRouting();
           }}
-          disabled={!canSyncRouting || isReleased || pendingAction !== null}
-          title={canSyncRouting ? "Sync Twilio webhook URLs" : "Twilio number SID is required"}
+          disabled={!canSyncRouting || pendingAction !== null}
+          title={syncDisabledReason ?? "Sync Twilio webhook URLs"}
         >
           <RefreshCcw className="h-3.5 w-3.5" aria-hidden="true" />
           {pendingAction === "sync" ? "Syncing" : "Sync routing"}
@@ -85,6 +86,9 @@ export function PhoneNumberActions({
           {pendingAction === "release" ? "Releasing" : "Release"}
         </Button>
       </div>
+      {syncDisabledReason && !isReleased ? (
+        <p className="text-xs text-[var(--muted-foreground)]">{syncDisabledReason}</p>
+      ) : null}
       {error ? <p className="text-xs text-red-600">{error}</p> : null}
     </div>
   );

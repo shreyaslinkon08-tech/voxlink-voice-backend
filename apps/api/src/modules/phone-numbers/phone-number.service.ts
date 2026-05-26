@@ -192,6 +192,7 @@ export async function syncPhoneNumberRouting(
     },
     select: {
       id: true,
+      aiAgentId: true,
       providerNumberSid: true
     }
   });
@@ -202,6 +203,16 @@ export async function syncPhoneNumberRouting(
 
   if (!phoneNumber.providerNumberSid) {
     throw AppError.badRequest("This phone number does not have a Twilio number SID to sync");
+  }
+
+  if (!phoneNumber.aiAgentId) {
+    throw AppError.badRequest("Assign an AI agent before syncing Twilio routing");
+  }
+
+  if (!isTwilioIncomingPhoneNumberSid(phoneNumber.providerNumberSid)) {
+    throw AppError.badRequest(
+      "Enter a valid Twilio Incoming Phone Number SID before syncing routing"
+    );
   }
 
   const provider = requireTwilioProvider(app);
@@ -306,4 +317,8 @@ async function assertPhoneNumberIsNotMapped(app: FastifyInstance, e164: string):
   if (existing) {
     throw AppError.conflict("Phone number is already mapped in VoxLink");
   }
+}
+
+function isTwilioIncomingPhoneNumberSid(value: string): boolean {
+  return /^PN[0-9a-fA-F]{32}$/.test(value.trim());
 }
