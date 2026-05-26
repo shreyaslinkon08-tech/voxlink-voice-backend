@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { clientApi, publicApiUrl } from "@/lib/client-api";
+import { clientApi } from "@/lib/client-api";
 
 interface LoginFormProps {
   readonly initialError?: string;
@@ -19,7 +19,7 @@ export function LoginForm({ initialError }: LoginFormProps) {
   const [resendMessage, setResendMessage] = useState<string | null>(null);
   const [resending, setResending] = useState(false);
   const [loading, setLoading] = useState(false);
-  const googleLoginUrl = `${publicApiUrl}/auth/google/start?mode=login`;
+  const googleLoginUrl = "/api/auth/google/start?mode=login";
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();

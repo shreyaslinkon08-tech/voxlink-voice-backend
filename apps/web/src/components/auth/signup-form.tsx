@@ -4,7 +4,7 @@ import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { clientApi, publicApiUrl } from "@/lib/client-api";
+import { clientApi } from "@/lib/client-api";
 
 interface SignupFormProps {
   readonly invitationToken?: string;
@@ -71,7 +71,7 @@ export function SignupForm({ invitationToken, initialError }: SignupFormProps) {
       params.set("companyName", companyName);
     }
 
-    window.location.assign(`${publicApiUrl}/auth/google/start?${params.toString()}`);
+    window.location.assign(`/api/auth/google/start?${params.toString()}`);
   }
 
   return (

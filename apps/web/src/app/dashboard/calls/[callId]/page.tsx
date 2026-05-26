@@ -17,7 +17,6 @@ import { StatusBadge } from "@/components/dashboard/status-badge";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { publicApiUrl } from "@/lib/api-url";
 import { formatDateTime, formatDurationFromDates, formatMilliseconds } from "@/lib/format";
 import { getCall } from "@/lib/server-api";
 
@@ -31,7 +30,7 @@ export default async function CallDetailPage({ params }: CallDetailPageProps) {
   const { callId } = await params;
   const { call } = await getCall(callId);
   const openHandoff = call.operatorHandoffs.find((handoff) => handoff.status !== "resolved");
-  const exportUrl = new URL(`/calls/${call.id}/export`, publicApiUrl).toString();
+  const exportUrl = `/api/calls/${call.id}/export`;
 
   return (
     <div className="space-y-5">

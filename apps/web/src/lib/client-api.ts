@@ -9,6 +9,7 @@ interface ApiErrorPayload {
 }
 
 const clientRequestTimeoutMs = 30_000;
+const sameOriginApiUrl = "/api";
 
 export async function clientApi<TResponse>(
   path: string,
@@ -22,7 +23,7 @@ export async function clientApi<TResponse>(
   let response: Response;
 
   try {
-    response = await fetch(`${publicApiUrl}${path}`, {
+    response = await fetch(`${sameOriginApiUrl}${path}`, {
       ...init,
       credentials: "include",
       signal: init.signal ?? controller?.signal,
